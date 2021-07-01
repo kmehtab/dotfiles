@@ -2,7 +2,7 @@
 
 ## Description
 
-This is my dot files I use is in MacOS and Ubuntu.
+This is my dot files I use this in MacOS and Ubuntu.
 
 
 ## Getting Started
