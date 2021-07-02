@@ -3,9 +3,11 @@
 	name = kmehtab
 	email = kmehtab20@gmail.com
 	username = kmehtab
-	signingkey = DB1730C21A8F21A 
+	signingkey = DB1730C21A8F21A3 
 # Please adapt and uncomment the following lines:
 #	name = khan mehtab
 #	email = kmehtab@khans-iMac.local
 [gpg]
 	program = gpg
+[commit]
+	gpgsign = true
