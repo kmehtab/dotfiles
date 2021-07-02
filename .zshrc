@@ -10,7 +10,7 @@ fi
 
 # Path to your oh-my-zsh installation.
 export PATH=/usr/local/bin:/usr/local/sbin:${PATH}
-export ZSH="$HOME/.oh-my-zsh"
+export ZSH="/Users/kmehtab/.oh-my-zsh"
 export GEM_HOME="$HOME/.config/.gem"
 export GEM_PATH="$HOME/.config/.gem"
 export PATH=$PATH:$(ruby -e 'puts Gem.bindir')
@@ -137,11 +137,16 @@ GITSTATUS_LOG_LEVEL=DEBUG
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 #neofetch
 
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
 export PATH="/usr/local/opt/ruby@2.6/bin:$PATH"
 source $(dirname $(gem which colorls))/tab_complete.sh
 export PATH="/usr/local/opt/openjdk@11/bin:$PATH"
 
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
-
+# android studio path
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/tools
+export PATH=$PATH:$ANDROID_HOME/tools/bin
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+export PATH="/usr/local/opt/qt@5/bin:$PATH"
