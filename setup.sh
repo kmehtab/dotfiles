@@ -30,8 +30,8 @@ linkDotfile .zshrc
 linkDotfile .gitconfig
 linkDotfile .gitignore
 linkDotfile .config/alacritty
-linkDotfile .config/colors
+linkDotfile .config/colorls
 linkDotfile .config/nvim
-linkDotfile .config/rager
+linkDotfile .config/ranger
 linkDotfile .config/tmux
 
