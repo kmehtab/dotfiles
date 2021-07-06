@@ -9,3 +9,5 @@
 #	email = kmehtab@khans-iMac.local
 [gpg]
 	program = gpg
+[commit]
+	gpgSign = true

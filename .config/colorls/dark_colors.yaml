@@ -1,8 +1,8 @@
 # Main Colors
-unrecognized_file: gold
-#recognized_file:   lime
-dir:               dodgerblue
-recognized_file: '#12c475'
+unrecognized_file: '#689d6a'
+recognized_file:   '#689d6a'
+executable_file:   '#8ec07c'
+dir:               '#98971A'
 
 # Link
 dead_link: red
@@ -15,19 +15,19 @@ chardev:   green
 
 # Access Modes
 write:     darkkhaki
-read:      limegreen
-exec:      red
-no_access: indianred
+read:    darkkhaki
+exec:      darkkhaki
+no_access: darkkhaki
 
 # Age
-day_old:     mediumspringgreen
-hour_old:    '#12c475'
-no_modifier: seagreen
+day_old:    '#d5c4a1' 
+hour_old:    '#d5c4a1'
+no_modifier: '#d5c4a1'
 
 # File Size
 file_large:  orange
 file_medium: gold
-file_small:  peachpuff
+file_small:  '#d5c4a1'
 
 # Random
 report: white
@@ -43,5 +43,3 @@ modification: darkkhaki
 deletion:     darkred
 untracked:    darkorange
 unchanged:    forestgreen
-
-
