@@ -35,6 +35,7 @@ set formatoptions-=ro                  " Stop newline continution of comments
 set clipboard=unnamedplus               " Copy paste between vim and everything else
 set scrolloff=8
 set autochdir                           " Your working directory will always be the same as your working directory
+set laststatus=2                        "to get airline working in vim"   
 set formatoptions-=cro
 set sessionoptions-=blank               "disable comment on next line  
 au! BufWritePost $MYVIMRC source %      " auto source when writing to init.vm alternatively you can run :source $MYVIMRC

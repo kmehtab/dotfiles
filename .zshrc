@@ -14,6 +14,9 @@ export ZSH="$HOME/.oh-my-zsh"
 export GEM_HOME="$HOME/.config/.gem"
 export GEM_PATH="$HOME/.config/.gem"
 export PATH=$PATH:$(ruby -e 'puts Gem.bindir')
+export VISUAL=vim;
+export EDITOR=vim;
+export PATH="$HOME/.emacs.d/bin:$PATH"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
@@ -146,3 +149,5 @@ export PATH="/usr/local/opt/openjdk@11/bin:$PATH"
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
 
+# Remvoe folder highlighting
+export LS_COLORS=$LS_COLORS:'ow=1;34:';
