@@ -19,6 +19,7 @@ export ZSH="/Users/kmehtab/.oh-my-zsh"
 export GEM_HOME="$HOME/.config/.gem"
 export GEM_PATH="$HOME/.config/.gem"
 export PATH=$PATH:$(ruby -e 'puts Gem.bindir')
+export PATH="$HOME/.emacs.d/bin:$PATH"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
@@ -82,7 +83,6 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 plugins=(git zsh-syntax-highlighting zsh-autosuggestions)
 
 source $ZSH/oh-my-zsh.sh
-
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
