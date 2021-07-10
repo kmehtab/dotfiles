@@ -34,4 +34,4 @@ linkDotfile .config/colorls
 linkDotfile .config/nvim
 linkDotfile .config/ranger
 linkDotfile .config/tmux
-
+linkDotfile .config/doom
