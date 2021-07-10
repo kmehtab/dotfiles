@@ -65,9 +65,9 @@
        ;;word-wrap         ; soft wrapping with language-aware indent
 
        :emacs
-       dired             ; making dired pretty [functional]
+       (dired +icons)            ; making dired pretty [functional]
        electric          ; smarter, keyword-based electric-indent
-       ;;ibuffer         ; interactive buffer management
+       (ibuffer + icon)        ; interactive buffer management
        undo              ; persistent, smarter undo for your inevitable mistakes
        vc                ; version-control and Emacs, sitting in a tree
 
@@ -92,8 +92,9 @@
        (eval +overlay)     ; run code, run (also, repls)
        ;;gist              ; interacting with github gists
        lookup              ; navigate your code and its documentation
-       lsp               ; M-x vscode
-       magit             ; a git porcelain for Emacs
+       lsp                 ;Language Server Protocol
+       (magit              ; a git porcelain for Emacs
+        +forge)            ; interface with git forges
        ;;make              ; run make tasks from Emacs
        ;;pass              ; password manager for nerds
        pdf               ; pdf enhancements
@@ -146,7 +147,15 @@
        ;;nim               ; python + lisp at the speed of c
        ;;nix               ; I hereby declare "nix geht mehr!"
        ;;ocaml             ; an objective camel
-       (org +pretty +noter +dragndrop +present)               ; organize your plain life in plain text
+       (org                ; organize your plain life in plain text
+        +pretty            ; yessss my pretties! (nice unicode symbols)
+        +dragndrop         ; drag & drop files/images into org buffers
+        +noter             ; enhanced PDF notetaking
+        +jupyter           ; ipython/jupyter support for babel
+        +pandoc            ; export-with-pandoc support
+        +gnuplot           ; who doesn't like pretty pictures
+        +present           ; using org-mode for presentations
+        +roam)             ; wander around notes
        ;;php               ; perl's insecure younger brother
        ;;plantuml          ; diagrams for confusing people more
        ;;purescript        ; javascript, but functional

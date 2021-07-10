@@ -103,7 +103,14 @@
   (pushnew! auth-sources 'macos-keychain-internet 'macos-keychain-generic))
 
 
-;;
+(add-to-list 'initial-frame-alist '(fullscreen . maximized))
+;;(setq initial-frame-alist '((top . 1) (left . 1) (width . 143) (height . 55)))
+
+;;; :ui doom-dashboard
+(setq fancy-splash-image (concat doom-private-dir "splash.png"))
+;; Hide the menu for as minimalistic a startup screen as possible.
+;;(remove-hook '+doom-dashboard-functions #'doom-dashboard-widget-shortmenu)
+
 ;;; Packages
 
 (use-package! osx-trash
