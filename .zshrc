@@ -118,7 +118,7 @@ alias repo="cd /Volumes/Study\ HD/Development/repo"
 alias development="cd /Volumes/Study\ HD/Development"
 alias ls='colorls --sf'
 alias la='colorls -A --sf'
-alias lc='colorls -lA --sf'
+alias lc='colorls -lA --sd'
 alias lt='colorls --t=2 --sf'
 
 # alias zshconfig="mate ~/.zshrc"
