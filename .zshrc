@@ -1,3 +1,10 @@
+# gpg
+export GPG_TTY=$(tty)
+# ssh
+export SSH_KEY_PATH="~/.ssh/rsa_id"
+# pinentry
+export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block, everything else may go below.
@@ -51,10 +58,10 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # DISABLE_AUTO_TITLE="true"
 
 # Uncomment the following line to enable command auto-correction.
- ENABLE_CORRECTION="true"
+# ENABLE_CORRECTION="true"
 
 # Uncomment the following line to display red dots whilst waiting for completion.
- COMPLETION_WAITING_DOTS="true"
+# COMPLETION_WAITING_DOTS="true"
 
 # Uncomment the following line if you want to disable marking untracked files
 # under VCS as dirty. This makes repository status check for large repositories
@@ -98,11 +105,6 @@ source $ZSH/oh-my-zsh.sh
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
-# ssh
-export SSH_KEY_PATH="~/.ssh/rsa_id"
-
-# gpg
-export GPG_TTY=$TTY
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
 # users are encouraged to define aliases within the ZSH_CUSTOM folder.
@@ -112,7 +114,7 @@ export GPG_TTY=$TTY
 alias zshrc="nvim ~/.zshrc"
 alias vimrc="nvim ~/.vimrc"
 alias nvimrc="nvim ~/.config/nvim/init.vim"
-alias vim="nvim"
+#alias vim="nvim"
 alias download="cd /Volumes/Downloads\ HD"
 alias study="cd /Volumes/Study\ HD"
 alias phone="cd /Volumes/Phone\ HD"
@@ -123,6 +125,7 @@ alias ls='colorls --sf'
 alias la='colorls -A --sf'
 alias lc='colorls -lA --sf'
 alias lt='colorls --t=2 --sf'
+alias c='clear'
 
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
