@@ -4,7 +4,7 @@
 # Folder view configuration files
 .DS_Store
 Desktop.ini
-.config/nvim/autoload/
+nvim/autoload/
 
 # Thumbnail cache files
 ._*

@@ -2,10 +2,10 @@
 dotfilesDir=$(pwd)
 
 function linkDotfile {
-  dest="${HOME}/${1}"
+  dest="${HOME}/.config/${1}"
   dateStr=$(date +%Y-%m-%d-%H%M)
 
-  if [ -h ~/${1} ]; then
+  if [ -h "$dest" ]; then
     # Existing symlink 
     echo "Removing existing symlink: ${dest}"
     rm ${dest} 
@@ -25,12 +25,12 @@ function linkDotfile {
   ln -s ${dotfilesDir}/${1} ${dest}
 }
 
-linkDotfile .zshrc
-linkDotfile .gitconfig
-linkDotfile .gitignore
-linkDotfile .config/alacritty
-linkDotfile .config/colorls
-linkDotfile .config/nvim
-linkDotfile .config/ranger
-linkDotfile .config/tmux
-linkDotfile .config/doom
+ln -s ~/.dotfiles/.zshrc ~/.zshrc
+ln -s ~/.dotfiles/.gitconfig ~/.gitconfig
+ln -s ~/.dotfiles/.gitignore ~/.gitignore
+linkDotfile alacritty
+linkDotfile colorls
+linkDotfile nvim
+linkDotfile ranger
+linkDotfile tmux
+linkDotfile doom
