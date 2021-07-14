@@ -1,0 +1,21 @@
+[submodule "LaTeX-auto-activiating-snippets"]
+	path = .config/doom/lisp/LaTeX-auto-activating-snippets
+	url = https://github.com/tecosaur/LaTeX-auto-activating-snippets.git
+[submodule "Lexic"]
+	path = .config/doom/lisp/lexic
+	url = https://github.com/tecosaur/sdcv.git
+[submodule "org-pandoc-import"]
+	path = .config/doom/lisp/org-pandoc-import
+	url = https://github.com/tecosaur/org-pandoc-import.git
+[submodule "authinfo-color-mode"]
+	path = .config/doom/lisp/authinfo-color-mode
+	url = https://github.com/tecosaur/authinfo-color-mode.git
+[submodule "screenshot"]
+	path = .config/doom/lisp/screenshot
+	url = https://github.com/tecosaur/screenshot.git
+[submodule "engrave-faces"]
+	path = .config/doom/lisp/engrave-faces
+	url = https://github.com/tecosaur/engrave-faces.git
+[submodule "emacs-everywhere"]
+	path = .config/doom/lisp/emacs-everywhere
+	url = https://github.com/tecosaur/emacs-everywhere.git
