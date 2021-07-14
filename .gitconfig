@@ -11,3 +11,5 @@
 	program = gpg
 [commit]
 	gpgSign = true
+[tags]
+	gpgsign = true

@@ -16,13 +16,13 @@ window.dynamic_title: true
 # Font Customization
 font:
   normal:
-    family: MesloLGS NF
-    style: Regular
+    family: FiraCode Nerd Font
+    style: Retina
     #bold:
-    #family:  MesloLGS NF
+    #family: MesloLGS NF
     #style: Bold
   italic:
-    family: MesloLGS NF
+    family: JetBrains Mono
     style: Italic
   size: 15
   offset:
