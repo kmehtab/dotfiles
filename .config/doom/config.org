@@ -3593,579 +3593,6 @@ Now let's use this instead of wordnet.
 ** Mail
 [[xkcd:1467]]
 
-*** Fetching
-The contenders for this seem to be:
-+ [[https://www.offlineimap.org/][OfflineIMAP]] ([[https://wiki.archlinux.org/index.php/OfflineIMAP][ArchWiki page]])
-+ [[http://isync.sourceforge.net/mbsync.html][isync/mbsync]] ([[https://wiki.archlinux.org/index.php/isync][ArchWiki page]])
-
-From perusing r/emacs the prevailing opinion seems to be that
-+ isync is faster
-+ isync works more reliably
-So let's use that.
-
-The config was straightforward, and is located at [[file:~/.mbsyncrc][~/.mbsyncrc]].
-I'm currently successfully connecting to: Gmail, office365mail, and dovecot.
-I'm also shoving passwords in my [[file:~/.authinfo.gpg][authinfo.gpg]] and fetching them using ~PassCmd~:
-#+begin_src shell :tangle no :eval no
-gpg2 -q --for-your-eyes-only --no-tty -d ~/.authinfo.gpg | awk '/machine IMAP_SERCER login EMAIL_ADDR/ {print $NF}'
-#+end_src
-
-We can run ~mbsync -a~ in a systemd service file or something, but we can do
-better than that. [[https://github.com/vsemyonoff/easymail#usage][vsemyonoff/easymail]] seems like the sort of thing we want, but
-is written for =notmuch= unfortunately. We can still use it for inspiration though.
-Using [[https://gitlab.com/shackra/goimapnotify][goimapnotify]] we should be able to sync just after new
-mail. Unfortunately this means /yet another/ config file :(
-
-We install with
-#+begin_src shell :eval no :tangle (if (executable-find "goimapnotify") "no" "setup.sh")
-go get -u gitlab.com/shackra/goimapnotify
-ln -s ~/.local/share/go/bin/goimapnotify ~/.local/bin/
-#+end_src
-
-Here's the general plan:
-1. Use ~goimapnotify~ to monitor mailboxes
-   This needs it's own set of configs, and =systemd= services, which is a pain. We
-   remove this pain by writing a python script (found below) to setup these
-   config files, and systemd services by parsing the  [[file:~/.mbsyncrc][~/.mbsyncrc]] file.
-2. On new mail, call ~mbsync --pull --new ACCOUNT:BOX~
-   We try to be as specific as possible, so ~mbsync~ returns as soon as possible,
-   and we can /get those emails as soon as possible/.
-3. Try to call ~mu index --lazy-fetch~.
-   This fails if mu4e is already open (due to a write lock on the database), so
-   in that case we just ~touch~ a tmp file (=/tmp/mu_reindex_now=).
-4. Separately, we set up Emacs to check for the existance of
-   =/tmp/mu_reindex_now= once a second while mu4e is
-   running, and (after deleting the file) call ~mu4e-update-index~.
-
-Let's start off by handling the elisp side of things
-
-**** Rebuild mail index while using mu4e
-#+begin_src emacs-lisp
-(after! mu4e
-  (defvar mu4e-reindex-request-file "/tmp/mu_reindex_now"
-    "Location of the reindex request, signaled by existance")
-  (defvar mu4e-reindex-request-min-seperation 5.0
-    "Don't refresh again until this many second have elapsed.
-Prevents a series of redisplays from being called (when set to an appropriate value)")
-
-  (defvar mu4e-reindex-request--file-watcher nil)
-  (defvar mu4e-reindex-request--file-just-deleted nil)
-  (defvar mu4e-reindex-request--last-time 0)
-
-  (defun mu4e-reindex-request--add-watcher ()
-    (setq mu4e-reindex-request--file-just-deleted nil)
-    (setq mu4e-reindex-request--file-watcher
-          (file-notify-add-watch mu4e-reindex-request-file
-                                 '(change)
-                                 #'mu4e-file-reindex-request)))
-
-  (defadvice! mu4e-stop-watching-for-reindex-request ()
-    :after #'mu4e~proc-kill
-    (if mu4e-reindex-request--file-watcher
-        (file-notify-rm-watch mu4e-reindex-request--file-watcher)))
-
-  (defadvice! mu4e-watch-for-reindex-request ()
-    :after #'mu4e~proc-start
-    (mu4e-stop-watching-for-reindex-request)
-    (when (file-exists-p mu4e-reindex-request-file)
-      (delete-file mu4e-reindex-request-file))
-    (mu4e-reindex-request--add-watcher))
-
-  (defun mu4e-file-reindex-request (event)
-    "Act based on the existance of `mu4e-reindex-request-file'"
-    (if mu4e-reindex-request--file-just-deleted
-        (mu4e-reindex-request--add-watcher)
-      (when (equal (nth 1 event) 'created)
-        (delete-file mu4e-reindex-request-file)
-        (setq mu4e-reindex-request--file-just-deleted t)
-        (mu4e-reindex-maybe t))))
-
-  (defun mu4e-reindex-maybe (&optional new-request)
-    "Run `mu4e~proc-index' if it's been more than
-`mu4e-reindex-request-min-seperation'seconds since the last request,"
-    (let ((time-since-last-request (- (float-time)
-                                      mu4e-reindex-request--last-time)))
-      (when new-request
-        (setq mu4e-reindex-request--last-time (float-time)))
-      (if (> time-since-last-request mu4e-reindex-request-min-seperation)
-          (mu4e~proc-index nil t)
-        (when new-request
-          (run-at-time (* 1.1 mu4e-reindex-request-min-seperation) nil
-                       #'mu4e-reindex-maybe))))))
-#+end_src
-
-**** Config transcoding & service management
-As long as the =mbsyncrc= file exists, this is as easy as running
-#+begin_src shell :tangle (if (file-exists-p "~/.config/imapnotify") "no" "setup.sh")
-~/.config/doom/misc/mbsync-imapnotify.py
-#+end_src
-
-When run without flags this will perform the following actions
-+ Read, and parse [[file:~/.mbsyncrc][~/.mbsyncrc]], specifically recognising the following properties
-  - ~IMAPAccount~
-  - ~Host~
-  - ~Port~
-  - ~User~
-  - ~Password~
-  - ~PassCmd~
-  - ~Patterns~
-+ Call ~mbsync --list ACCOUNT~, and filter results according to ~Patterns~
-+ Construct a imapnotify config for each account, with the following hooks
-  - onNewMail :: src_shell{mbsync --pull ACCOUNT:MAILBOX}
-  - onNewMailPost :: src_shell{if mu index --lazy-check; then test -f /tmp/mu_reindex_now && rm /tmp/mu_reindex_now; else touch /tmp/mu_reindex_now; fi}
-+ Compare accounts list to previous accounts, enable/disable the relevant
-  systemd services, called with the ~--now~ flag (start/stop services as well)
-
-This script also supports the following flags
-+ ~--status~ to get the status of the relevant systemd services supports =active=,
-  =failing=, and =disabled=
-+ ~--enable~ to enable all relevant systemd services
-+ ~--disable~ to disable all relevant systemd services
-#+begin_src python :tangle misc/mbsync-imapnotify.py :shebang "#!/usr/bin/env python3"
-from pathlib import Path
-import json
-import re
-import shutil
-import subprocess
-import sys
-import fnmatch
-
-mbsyncFile = Path("~/.mbsyncrc").expanduser()
-
-imapnotifyConfigFolder = Path("~/.config/imapnotify/").expanduser()
-imapnotifyConfigFolder.mkdir(exist_ok=True)
-imapnotifyConfigFilename = "notify.conf"
-
-imapnotifyDefault = {
-    "host": "",
-    "port": 993,
-    "tls": True,
-    "tlsOptions": {"rejectUnauthorized": True},
-    "onNewMail": "",
-    "onNewMailPost": "if mu index --lazy-check; then test -f /tmp/mu_reindex_now && rm /tmp/mu_reindex_now; else touch /tmp/mu_reindex_now; fi",
-}
-
-
-def stripQuotes(string):
-    if string[0] == '"' and string[-1] == '"':
-        return string[1:-1].replace('\\"', '"')
-
-
-mbsyncInotifyMapping = {
-    "Host": (str, "host"),
-    "Port": (int, "port"),
-    "User": (str, "username"),
-    "Password": (str, "password"),
-    "PassCmd": (stripQuotes, "passwordCmd"),
-    "Patterns": (str, "_patterns"),
-}
-
-oldAccounts = [d.name for d in imapnotifyConfigFolder.iterdir() if d.is_dir()]
-
-currentAccount = ""
-currentAccountData = {}
-
-successfulAdditions = []
-
-
-def processLine(line):
-    newAcc = re.match(r"^IMAPAccount ([^#]+)", line)
-
-    linecontent = re.sub(r"(^|[^\\])#.*", "", line).split(" ", 1)
-    if len(linecontent) != 2:
-        return
-
-    parameter, value = linecontent
-
-    if parameter == "IMAPAccount":
-        if currentAccountNumber > 0:
-            finaliseAccount()
-        newAccount(value)
-    elif parameter in mbsyncInotifyMapping.keys():
-        parser, key = mbsyncInotifyMapping[parameter]
-        currentAccountData[key] = parser(value)
-    elif parameter == "Channel":
-        currentAccountData["onNewMail"] = f"mbsync --pull --new {value}:'%s'"
-
-
-def newAccount(name):
-    global currentAccountNumber
-    global currentAccount
-    global currentAccountData
-    currentAccountNumber += 1
-    currentAccount = name
-    currentAccountData = {}
-    print(f"\n\033[1;32m{currentAccountNumber}\033[0;32m - {name}\033[0;37m")
-
-
-def accountToFoldername(name):
-    return re.sub(r"[^A-Za-z0-9]", "", name)
-
-
-def finaliseAccount():
-    if currentAccountNumber == 0:
-        return
-
-    global currentAccountData
-    try:
-        currentAccountData["boxes"] = getMailBoxes(currentAccount)
-    except subprocess.CalledProcessError as e:
-        print(
-            f"\033[1;31mError:\033[0;31m failed to fetch mailboxes (skipping): "
-            + f"`{' '.join(e.cmd)}' returned code {e.returncode}\033[0;37m"
-        )
-        return
-    except subprocess.TimeoutExpired as e:
-        print(
-            f"\033[1;31mError:\033[0;31m failed to fetch mailboxes (skipping): "
-            + f"`{' '.join(e.cmd)}' timed out after {e.timeout:.2f} seconds\033[0;37m"
-        )
-        return
-
-    if "_patterns" in currentAccountData:
-        currentAccountData["boxes"] = applyPatternFilter(
-            currentAccountData["_patterns"], currentAccountData["boxes"]
-        )
-
-    # strip not-to-be-exported data
-    currentAccountData = {
-        k: currentAccountData[k] for k in currentAccountData if k[0] != "_"
-    }
-
-    parametersSet = currentAccountData.keys()
-    currentAccountData = {**imapnotifyDefault, **currentAccountData}
-    for key, val in currentAccountData.items():
-        valColor = "\033[0;33m" if key in parametersSet else "\033[0;37m"
-        print(f"  \033[1;37m{key:<13} {valColor}{val}\033[0;37m")
-
-    if (
-            len(currentAccountData["boxes"]) > 15
-            and "@gmail.com" in currentAccountData["username"]
-    ):
-        print(
-            "  \033[1;31mWarning:\033[0;31m Gmail raises an error when more than"
-            + "\033[1;31m15\033[0;31m simultanious connections are attempted."
-            + "\n           You are attempting to monitor "
-            + f"\033[1;31m{len(currentAccountData['boxes'])}\033[0;31m mailboxes.\033[0;37m"
-        )
-
-    configFile = (
-        imapnotifyConfigFolder
-        / accountToFoldername(currentAccount)
-        / imapnotifyConfigFilename
-    )
-    configFile.parent.mkdir(exist_ok=True)
-
-    json.dump(currentAccountData, open(configFile, "w"), indent=2)
-    print(f" \033[0;35mConfig generated and saved to {configFile}\033[0;37m")
-
-    global successfulAdditions
-    successfulAdditions.append(accountToFoldername(currentAccount))
-
-
-def getMailBoxes(account):
-    boxes = subprocess.run(
-        ["mbsync", "--list", account], check=True, stdout=subprocess.PIPE, timeout=10.0
-    )
-    return boxes.stdout.decode("utf-8").strip().split("\n")
-
-
-def applyPatternFilter(pattern, mailboxes):
-    patternRegexs = getPatternRegexes(pattern)
-    return [m for m in mailboxes if testPatternRegexs(patternRegexs, m)]
-
-
-def getPatternRegexes(pattern):
-    def addGlob(b):
-        blobs.append(b.replace('\\"', '"'))
-        return ""
-
-    blobs = []
-    pattern = re.sub(r' ?"([^"]+)"', lambda m: addGlob(m.groups()[0]), pattern)
-    blobs.extend(pattern.split(" "))
-    blobs = [
-        (-1, fnmatch.translate(b[1::])) if b[0] == "!" else (1, fnmatch.translate(b))
-        for b in blobs
-    ]
-    return blobs
-
-
-def testPatternRegexs(regexCond, case):
-    for factor, regex in regexCond:
-        if factor * bool(re.match(regex, case)) < 0:
-            return False
-    return True
-
-
-def processSystemdServices():
-    keptAccounts = [acc for acc in successfulAdditions if acc in oldAccounts]
-    freshAccounts = [acc for acc in successfulAdditions if acc not in oldAccounts]
-    staleAccounts = [acc for acc in oldAccounts if acc not in successfulAdditions]
-
-    if keptAccounts:
-        print(f"\033[1;34m{len(keptAccounts)}\033[0;34m kept accounts:\033[0;37m")
-        restartAccountSystemdServices(keptAccounts)
-
-    if freshAccounts:
-        print(f"\033[1;32m{len(freshAccounts)}\033[0;32m new accounts:\033[0;37m")
-        enableAccountSystemdServices(freshAccounts)
-    else:
-        print(f"\033[0;32mNo new accounts.\033[0;37m")
-
-    notActuallyEnabledAccounts = [
-        acc for acc in successfulAdditions if not getAccountServiceState(acc)["enabled"]
-    ]
-    if notActuallyEnabledAccounts:
-        print(
-            f"\033[1;32m{len(notActuallyEnabledAccounts)}\033[0;32m accounts need re-enabling:\033[0;37m"
-        )
-        enableAccountSystemdServices(notActuallyEnabledAccounts)
-
-    if staleAccounts:
-        print(f"\033[1;33m{len(staleAccounts)}\033[0;33m removed accounts:\033[0;37m")
-        disableAccountSystemdServices(staleAccounts)
-    else:
-        print(f"\033[0;33mNo removed accounts.\033[0;37m")
-
-
-def enableAccountSystemdServices(accounts):
-    for account in accounts:
-        print(f" \033[0;32m - \033[1;37m{account:<18}", end="\033[0;37m", flush=True)
-        if setSystemdServiceState(
-                "enable", f"goimapnotify@{accountToFoldername(account)}.service"
-        ):
-            print("\033[1;32m enabled")
-
-
-def disableAccountSystemdServices(accounts):
-    for account in accounts:
-        print(f" \033[0;33m - \033[1;37m{account:<18}", end="\033[0;37m", flush=True)
-        if setSystemdServiceState(
-                "disable", f"goimapnotify@{accountToFoldername(account)}.service"
-        ):
-            print("\033[1;33m disabled")
-
-
-def restartAccountSystemdServices(accounts):
-    for account in accounts:
-        print(f" \033[0;34m - \033[1;37m{account:<18}", end="\033[0;37m", flush=True)
-        if setSystemdServiceState(
-                "restart", f"goimapnotify@{accountToFoldername(account)}.service"
-        ):
-            print("\033[1;34m restarted")
-
-
-def setSystemdServiceState(state, service):
-    try:
-        enabler = subprocess.run(
-            ["systemctl", "--user", state, service, "--now"],
-            check=True,
-            stderr=subprocess.DEVNULL,
-            timeout=5.0,
-        )
-        return True
-    except subprocess.CalledProcessError as e:
-        print(
-            f" \033[1;31mfailed\033[0;31m to {state}, `{' '.join(e.cmd)}'"
-            + f"returned code {e.returncode}\033[0;37m"
-        )
-    except subprocess.TimeoutExpired as e:
-        print(f" \033[1;31mtimed out after {e.timeout:.2f} seconds\033[0;37m")
-        return False
-
-
-def getAccountServiceState(account):
-    return {
-        state: bool(
-            1
-            - subprocess.run(
-                [
-                    "systemctl",
-                    "--user",
-                    f"is-{state}",
-                    "--quiet",
-                    f"goimapnotify@{accountToFoldername(account)}.service",
-                ],
-                stderr=subprocess.DEVNULL,
-            ).returncode
-        )
-        for state in ("enabled", "active", "failing")
-    }
-
-
-def getAccountServiceStates(accounts):
-    for account in accounts:
-        enabled, active, failing = getAccountServiceState(account).values()
-        print(f"  - \033[1;37m{account:<18}\033[0;37m ", end="", flush=True)
-        if not enabled:
-            print("\033[1;33mdisabled\033[0;37m")
-        elif active:
-            print("\033[1;32mactive\033[0;37m")
-        elif failing:
-            print("\033[1;31mfailing\033[0;37m")
-        else:
-            print("\033[1;35min an unrecognised state\033[0;37m")
-
-
-if len(sys.argv) > 1:
-    if sys.argv[1]   in ["-e", "--enable"]:
-        enableAccountSystemdServices(oldAccounts)
-        exit()
-    elif sys.argv[1] in ["-d", "--disable"]:
-        disableAccountSystemdServices(oldAccounts)
-        exit()
-    elif sys.argv[1] in ["-r", "--restart"]:
-        restartAccountSystemdServices(oldAccounts)
-        exit()
-    elif sys.argv[1] in ["-s", "--status"]:
-        getAccountServiceStates(oldAccounts)
-        exit()
-    elif sys.argv[1] in ["-h", "--help"]:
-        print("""\033[1;37mMbsync to IMAP Notify config generator.\033[0;37m
-
-Usage: mbsync-imapnotify [options]
-
-Options:
-    -e, --enable       enable all services
-    -d, --disable      disable all services
-    -r, --restart      restart all services
-    -s, --status       fetch the status for all services
-    -h, --help         show this help
-""", end='')
-        exit()
-    else:
-        print(f"\033[0;31mFlag {sys.argv[1]} not recognised, try --help\033[0;37m")
-        exit()
-
-
-mbsyncData = open(mbsyncFile, "r").read()
-
-currentAccountNumber = 0
-
-totalAccounts = len(re.findall(r"^IMAPAccount", mbsyncData, re.M))
-
-
-def main():
-    print("\033[1;34m:: MbSync to Go IMAP notify config file creator ::\033[0;37m")
-
-    shutil.rmtree(imapnotifyConfigFolder)
-    imapnotifyConfigFolder.mkdir(exist_ok=False)
-    print("\033[1;30mImap Notify config dir purged\033[0;37m")
-
-    print(f"Identified \033[1;32m{totalAccounts}\033[0;32m accounts.\033[0;37m")
-
-    for line in mbsyncData.split("\n"):
-        processLine(line)
-
-    finaliseAccount()
-
-    print(
-        f"\nConfig files generated for \033[1;36m{len(successfulAdditions)}\033[0;36m"
-        + f" out of \033[1;36m{totalAccounts}\033[0;37m accounts.\n"
-    )
-
-    processSystemdServices()
-
-
-if __name__ == "__main__":
-    main()
-#+end_src
-
-**** Systemd
-We then have a service file to run ~goimapnotify~ on all of these generated config files.
-We'll use a template service file so we can enable a unit per-account.
-#+begin_src systemd :tangle ~/.config/systemd/user/goimapnotify@.service
-[Unit]
-Description=IMAP notifier using IDLE, golang version.
-ConditionPathExists=%h/.config/imapnotify/%I/notify.conf
-After=network.target
-
-[Service]
-ExecStart=%h/.local/bin/goimapnotify -conf %h/.config/imapnotify/%I/notify.conf
-Restart=always
-RestartSec=30
-
-[Install]
-WantedBy=default.target
-#+end_src
-
-Enabling the service is actually taken care of by that python script.
-
-From one or two small tests, this can bring the delay down to as low as five
-seconds, which I'm quite happy with.
-
-This works well for fetching new mail, but we also want to propagate other
-changes (e.g. marking mail as read), and make sure we're up to date at the
-start, so for that I'll do the 'normal' thing and run ~mbsync -all~ every so often
---- let's say five minutes.
-
-We can accomplish this via a systemd timer, and service file.
-#+begin_src systemd :tangle ~/.config/systemd/user/mbsync.timer
-[Unit]
-Description=call mbsync on all accounts every 5 minutes
-ConditionPathExists=%h/.mbsyncrc
-
-[Timer]
-OnBootSec=5m
-OnUnitInactiveSec=5m
-
-[Install]
-WantedBy=default.target
-#+end_src
-
-#+begin_src systemd :tangle ~/.config/systemd/user/mbsync.service
-[Unit]
-Description=mbsync service, sync all mail
-Documentation=man:mbsync(1)
-ConditionPathExists=%h/.mbsyncrc
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/mbsync -c %h/.mbsyncrc --all
-
-[Install]
-WantedBy=mail.target
-#+end_src
-
-Enabling (and starting) this is as simple as
-#+begin_src shell :tangle (if (string= "enabled\n" (shell-command-to-string "systemctl --user is-enabled mbsync.timer")) "no" "setup.sh")
-systemctl --user enable mbsync.timer --now
-#+end_src
-*** Indexing/Searching
-This is performed by [[https://www.djcbsoftware.nl/code/mu/][Mu]]. This is a tool for finding emails stored in the [[http://en.wikipedia.org/wiki/Maildir][Maildir]] format.
-According to the homepage, it's main features are
-+ Fast indexing
-+ Good searching
-+ Support for encrypted and signed messages
-+ Rich CLI tooling
-+ accent/case normalisation
-+ strong integration with email clients
-
-Unfortunately ~mu~ is not currently packaged from me. Oh well, I guess I'm
-building it from source then. I needed to install these packages
-+ =gmime-devel=
-+ =xapian-core-devel=
-
-#+name: Install mu from source
-#+begin_src shell :eval no :tangle (if (executable-find "mu") "no" "setup.sh")
-cd ~/.local/lib/
-git clone https://github.com/djcb/mu.git
-cd ./mu
-./autogen.sh
-make
-sudo make install
-#+end_src
-
-To check how my version compares to the latest published:
-
-#+begin_src shell :tangle no
-curl --silent "https://api.github.com/repos/djcb/mu/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
-mu --version | head -n 1 | sed 's/.* version //'
-#+end_src
-
-#+results:
-| 1.4.6 |
-| 1.4.6 |
 *** Sending
 [[https://www.nongnu.org/smtpmail/][SmtpMail]] seems to be the 'default' starting point, but that's not packaged for
 me. [[https://marlam.de/msmtp/][msmtp]] is however, so I'll give that a shot. Reading around a bit (googling
@@ -4250,7 +3677,8 @@ user base, which tends to correlate with better support and attention.
 
 As I installed mu4e from source, I need to add the =/usr/local/= loadpath so Mu4e has a chance of loading
 #+begin_src emacs-lisp :tangle (if (file-directory-p "/usr/local/share/emacs/site-lisp/mu4e") "yes" "no")
-(add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu4e")
+(add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu/mu4e")
+(require 'mu4e)
 #+end_src
 
 **** Viewing Mail
@@ -4264,32 +3692,57 @@ fancy chars, and make sure they get the correct width.
 To account for the increase width of each flag character, and make perform a
 few more visual tweaks, we'll tweak the headers a bit
 #+begin_src emacs-lisp
-(after! mu4e
-  (setq mu4e-headers-fields
-        '((:flags . 6)
-          (:account-stripe . 2)
-          (:from-or-to . 25)
-          (:folder . 10)
-          (:recipnum . 2)
-          (:subject . 80)
-          (:human-date . 8))
-        +mu4e-min-header-frame-width 142
-        mu4e-headers-date-format "%d/%m/%y"
-        mu4e-headers-time-format "⧖ %H:%M"
-        mu4e-headers-results-limit 1000
-        mu4e-index-cleanup t)
+(use-package mu4e
+  :ensure nil
+  ;; :load-path "/usr/share/emacs/site-lisp/mu4e/"
+  ;; :defer 20 ; Wait until 20 seconds after startup
+  :config
 
-  (add-to-list 'mu4e-bookmarks
-               '(:name "Yesterday's messages" :query "date:2d..1d" :key ?y) t)
+  ;; This is set to 't' to avoid mail syncing issues when using mbsync
+  (setq mu4e-change-filenames-when-moving t)
 
-  (defvar +mu4e-header--folder-colors nil)
-  (appendq! mu4e-header-info-custom
-            '((:folder .
-               (:name "Folder" :shortname "Folder" :help "Lowest level folder" :function
-                (lambda (msg)
-                  (+mu4e-colorize-str
-                   (replace-regexp-in-string "\\`.*/" "" (mu4e-message-field msg :maildir))
-                   '+mu4e-header--folder-colors)))))))
+  ;; Refresh mail using isync every 10 minutes
+  ;;(setq mu4e-update-interval (* 10 60))
+  (setq mu4e-get-mail-command "mbsync -a")
+  (setq mu4e-maildir "~/Mail")
+
+  (setq mu4e-contexts
+        (list
+         ;; personal account
+         (make-mu4e-context
+          :name "mehtab20"
+          :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/Gmail" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address . "kmehtab20@gmail.com")
+                  (user-full-name    . "kmehtab")
+                  (mu4e-drafts-folder  . "/kmehtab20/[Gmail]/Drafts")
+                  (mu4e-sent-folder  . "/kmehtab20/[Gmail]/Sent Mail")
+                  (mu4e-refile-folder  . "/kmehtab20/[Gmail]/All Mail")
+                  (mu4e-trash-folder  . "/kmehtab20/[Gmail]/Trash")))
+
+         ;; Personal account
+         (make-mu4e-context
+          :name "kmehtab637"
+          :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/Gmail" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address . "kmehtab637.ma@gmail.com")
+                  (user-full-name    . "kmehtab637")
+                  (mu4e-drafts-folder  . "/kmehtab637/[Gmail]/Drafts")
+                  (mu4e-sent-folder  . "/kmehtab637/[Gmail]/Sent Mail")
+                  (mu4e-refile-folder  . "/kmehtab637/[Gmail]/All Mail")
+                  (mu4e-trash-folder  . "/kmehtab637/[Gmail]/Trash")))))
+
+
+  (setq mu4e-maildir-shortcuts
+      '(("/Inbox"             . ?i)
+        ("/[Gmail]/Sent Mail" . ?s)
+        ("/[Gmail]/Trash"     . ?t)
+        ("/[Gmail]/Drafts"    . ?d)
+        ("/[Gmail]/All Mail"  . ?a))))
 #+end_src
 
 We'll also use a nicer alert icon

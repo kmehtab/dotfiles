@@ -15,20 +15,3 @@ Thumbs.db
 .Trashes
 .config/ranger/plugins/__init__.py
 .config/ranger/plugins/__init__.pyo
-
-# Files from doom config
-
-!.dir-locals.el
-_minted-config
-abbrev.el
-config.*
-!config.org
-init.el
-packages.el
-cli.el
-setup.sh
-
-!publish
-!publish/config.html
-
-!.github
