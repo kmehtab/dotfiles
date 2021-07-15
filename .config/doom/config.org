@@ -350,9 +350,6 @@ the following:
 
 (display-time-mode 1)                             ; Enable time in the mode-line
 
-(unless (string-match-p "^Power N/A" (battery))   ; On laptops...
-  (display-battery-mode 1))                       ; it's nice to know how much power you have
-
 (global-subword-mode 1)                           ; Iterate through CamelCase words
 #+end_src
 *** Frame sizing
@@ -3591,70 +3588,6 @@ Now let's use this instead of wordnet.
   (lexic-search identifier nil nil t))
 #+end_src
 ** Mail
-[[xkcd:1467]]
-
-*** Sending
-[[https://www.nongnu.org/smtpmail/][SmtpMail]] seems to be the 'default' starting point, but that's not packaged for
-me. [[https://marlam.de/msmtp/][msmtp]] is however, so I'll give that a shot. Reading around a bit (googling
-"msmtp vs sendmail" for example) almost every comparison mentioned seems to
-suggest msmtp to be a better choice. I have seen the following points raised
-+ ~sendmail~ has several vulnerabilities
-+ ~sendmail~ is tedious to configure
-+ ~ssmtp~ is no longer maintained
-+ ~msmtp~ is a maintained alternative to ~ssmtp~
-+ ~msmtp~ is easier to configure
-
-The config file is [[file:~/.config/msmtp/config][~/.config/msmtp/config]].
-
-**** System hackery
-Unfortunately, I seem to have run into a [[https://bugs.archlinux.org/task/44994][bug]] present in my packaged version, so
-we'll just install the latest from source.
-
-For full use of the ~auth~ options, I need =GNU SASL=, which isn't packaged for me.
-I don't think I want it, but in case I do, I'll need to do this.
-#+name: Install gsasl from source
-#+begin_src shell :eval no :tangle (if (executable-find "msmtp") "no" "setup.sh")
-export GSASL_VERSION=1.8.1
-cd ~/.local/lib/
-curl "ftp://ftp.gnu.org/gnu/gsasl/libgsasl-$GSASL_VERSION.tar.gz" | tar xz
-curl "ftp://ftp.gnu.org/gnu/gsasl/gsasl-$GSASL_VERSION.tar.gz" | tar xz
-cd "./libgsasl-$GSASL_VERSION"
-./configure
-make
-sudo make install
-cd ..
-cd "./gsasl-$VERSION"
-./configure
-make
-sudo make install
-cd ..
-#+end_src
-
-Now actually compile ~msmtp~.
-#+name: Install msmtp from source
-#+begin_src shell :eval no :tangle (if (executable-find "msmtp") "no" "setup.sh")
-cd ~/.local/lib/
-git clone https://github.com/marlam/msmtp-mirror.git ./msmtp
-cd ./msmtp
-libtoolize --force
-aclocal
-autoheader
-automake --force-missing --add-missing
-autoconf
-# if using GSASL
-# PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure --with-libgsasl
-./configure
-make
-sudo make install
-#+end_src
-
-If using =GSASL= (from earlier) we need to make ensure that the dynamic library in
-in the library path. We can do by adding an executable with the same name
-earlier on in my ~$PATH~.
-#+begin_src sh :tangle no :shebang "#!/bin/sh"
-LD_LIBRARY_PATH=/usr/local/lib exec /usr/local/bin/msmtp "$@"
-#+end_src
-
 *** Mu4e
 Webmail clients are nice and all, but I still don't believe that SPAs in my
 browser can replaced desktop apps ... sorry Gmail. I'm also liking google less
@@ -3703,7 +3636,7 @@ few more visual tweaks, we'll tweak the headers a bit
 
   ;; Refresh mail using isync every 10 minutes
   ;;(setq mu4e-update-interval (* 10 60))
-  (setq mu4e-get-mail-command "mbsync -a")
+  ;;(setq mu4e-get-mail-command "mbsync -a")
   (setq mu4e-maildir "~/Mail")
 
   (setq mu4e-contexts
@@ -3714,9 +3647,9 @@ few more visual tweaks, we'll tweak the headers a bit
           :match-func
             (lambda (msg)
               (when msg
-                (string-prefix-p "/Gmail" (mu4e-message-field msg :maildir))))
+                (string-prefix-p "/kmehtab20" (mu4e-message-field msg :maildir))))
           :vars '((user-mail-address . "kmehtab20@gmail.com")
-                  (user-full-name    . "kmehtab")
+                  (user-full-name    . "Mehtab Khan")
                   (mu4e-drafts-folder  . "/kmehtab20/[Gmail]/Drafts")
                   (mu4e-sent-folder  . "/kmehtab20/[Gmail]/Sent Mail")
                   (mu4e-refile-folder  . "/kmehtab20/[Gmail]/All Mail")
@@ -3728,9 +3661,9 @@ few more visual tweaks, we'll tweak the headers a bit
           :match-func
             (lambda (msg)
               (when msg
-                (string-prefix-p "/Gmail" (mu4e-message-field msg :maildir))))
+                (string-prefix-p "/kmehtab637" (mu4e-message-field msg :maildir))))
           :vars '((user-mail-address . "kmehtab637.ma@gmail.com")
-                  (user-full-name    . "kmehtab637")
+                  (user-full-name    . "Mehtab khan")
                   (mu4e-drafts-folder  . "/kmehtab637/[Gmail]/Drafts")
                   (mu4e-sent-folder  . "/kmehtab637/[Gmail]/Sent Mail")
                   (mu4e-refile-folder  . "/kmehtab637/[Gmail]/All Mail")
@@ -3753,7 +3686,7 @@ We'll also use a nicer alert icon
 Let's send emails too.
 #+begin_src emacs-lisp
 (after! mu4e
-  (setq sendmail-program "/usr/bin/msmtp"
+  (setq sendmail-program "/usr/local/bin/msmtp"
         send-mail-function #'smtpmail-send-it
         message-sendmail-f-is-evil t
         message-sendmail-extra-arguments '("--read-envelope-from"); , "--read-recipients")
@@ -3764,28 +3697,7 @@ It's also nice to avoid accidentally sending emails with the wrong account.
 If we can send from the address in the ~To~ field, let's do that. Opening an ~ivy~
 prompt otherwise also seems sensible.
 
-We can register Emacs as a potential email client with the following desktop
-file, thanks to Etienne Deparis's [[https://etienne.depar.is/emacs.d/mu4e.html][Mu4e customization]].
-#+begin_src conf :tangle ~/.local/share/applications/emacsmail.desktop :mkdirp yes
-[Desktop Entry]
-Name=Compose message in Emacs
-GenericName=Compose a new message with Mu4e in Emacs
-Comment=Open mu4e compose window
-MimeType=x-scheme-handler/mailto;
-Exec=emacsclient -create-frame --alternate-editor="" --no-wait --eval '(progn (x-focus-frame nil) (mu4e-compose-from-mailto "%u"))'
-Icon=emacs
-Type=Application
-Terminal=false
-Categories=Network;Email;
-StartupWMClass=Emacs
-#+end_src
-
-To register this, just call
-#+begin_src shell :tangle (if (string= (shell-command-to-string "xdg-mime query default x-scheme-handler/mailto") "emacsmail.desktop\n") "no" "setup.sh")
-update-desktop-database ~/.local/share/applications
-#+end_src
-
-We also want to define ~mu4e-compose-from-mailto~.
+We also want to     define ~mu4e-compose-from-mailto~.
 #+begin_src emacs-lisp
 (defun mu4e-compose-from-mailto (mailto-string)
   (require 'mu4e)
@@ -3805,7 +3717,7 @@ This may not quite function as intended for now due to [[github:jeremy-compostel
 
 It would also be nice to change the name pre-filled in =From:= when drafting.
 #+begin_src emacs-lisp
-(defvar mu4e-from-name "Timothy"
+(defvar mu4e-from-name "Mehtab Khan"
   "Name used in \"From:\" template.")
 (defadvice! mu4e~draft-from-construct-renamed (orig-fn)
   "Wrap `mu4e~draft-from-construct-renamed' to change the name."
