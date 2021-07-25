@@ -19,8 +19,8 @@ fi
 export PATH=/usr/local/bin:/usr/local/sbin:${PATH}
 export ZSH="$HOME/.oh-my-zsh"
 export GEM_HOME="$HOME/.config/.gem"
-export GEM_PATH="$HOME/.config/.gem"
 export PATH=$PATH:$(ruby -e 'puts Gem.bindir')
+export PATH="$PATH:$GEM_HOME/bin"
 export VISUAL=vim;
 export EDITOR=vim;
 export PATH="$HOME/.emacs.d/bin:$PATH"
@@ -114,7 +114,6 @@ source $ZSH/oh-my-zsh.sh
 alias zshrc="nvim ~/.zshrc"
 alias vimrc="nvim ~/.vimrc"
 alias nvimrc="nvim ~/.config/nvim/init.vim"
-#alias vim="nvim"
 alias download="cd /Volumes/Downloads\ HD"
 alias study="cd /Volumes/Study\ HD"
 alias phone="cd /Volumes/Phone\ HD"
@@ -146,7 +145,6 @@ GITSTATUS_LOG_LEVEL=DEBUG
 
 
 export PATH="/usr/local/opt/ruby@2.6/bin:$PATH"
-source $(dirname $(gem which colorls))/tab_complete.sh
 export PATH="/usr/local/opt/openjdk@11/bin:$PATH"
 
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
