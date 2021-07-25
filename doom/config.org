@@ -1871,9 +1871,6 @@ Programming environment
 #+end_src
 
 * [#B] Package configuration
-
-
-
 ** Abbrev mode
 Thanks to [[https://emacs.stackexchange.com/questions/45462/use-a-single-abbrev-table-for-multiple-modes/45476#45476][use a single abbrev-table for multiple modes? - Emacs Stack Exchange]] I
 have the following.
@@ -2083,6 +2080,37 @@ We then configure the dictionary we're using in [[*Ispell][Ispell]].
 #+begin_src emacs-lisp
 (set-company-backend! 'ess-r-mode '(company-R-args company-R-objects company-dabbrev-code :separate))
 #+end_src
+** Copy/Paste
+
+#+begin_src emacs-lisp
+; wsl-copy
+(defun wsl-copy (start end)
+  (interactive "r")
+  (shell-command-on-region start end "clip.exe")
+  (deactivate-mark))
+
+; wsl-paste
+(defun wsl-paste ()
+  (interactive)
+  (let ((clipboard
+     (shell-command-to-string "powershell.exe -command 'Get-Clipboard' 2> /dev/null")))
+    (setq clipboard (replace-regexp-in-string "\r" "" clipboard)) ; Remove Windows ^M characters
+    (setq clipboard (substring clipboard 0 -1)) ; Remove newline added by Powershell
+    (insert clipboard)))
+#+end_src
+
+#+begin_src emacs-lisp
+; Bind wsl-copy to C-c C-v
+(global-set-key
+ (kbd "C-c C-c")
+ 'wsl-copy)
+
+; Bind wsl-paste to C-c C-v
+(global-set-key
+ (kbd "C-c C-v")
+ 'wsl-paste)
+#+end_src
+
 ** Doom modeline
 Very nice and pretty, however I think the PDF modeline could do with tweaking.
 I raised [[https://github.com/seagle0128/doom-modeline/pull/425][an issue]] on this, however the response was basically "put your
@@ -9174,21 +9202,7 @@ Lastly, whenever Emacs is non-graphical (i.e. a TUI), we want to use this by def
         "ExtJS" "JQuery" "JQuery_Mobile" "JQuery_UI" "KnockoutJS" "Lo-Dash"
         "MarionetteJS" "MomentJS" "NodeJS" "PrototypeJS" "React" "RequireJS"
         "SailsJS" "UnderscoreJS" "VueJS" "ZeptoJS")
-      (set-ligatures! mode
-        ;; Functional
-        :def "function"
-        :lambda "() =>"
-        :composition "compose"
-        ;; Types
-        :null "null"
-        :true "true" :false "false"
-        ;; Flow
-        :not "!"
-        :and "&&" :or "||"
-        :for "for"
-        :return "return"
-        ;; Other
-        :yield "import"))))
+      (set-ligatures! mode))))
 
 
 (use-package! rjsx-mode

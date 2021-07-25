@@ -655,6 +655,35 @@
 (set-company-backend! 'ess-r-mode '(company-R-args company-R-objects company-dabbrev-code :separate))
 ;; ESS:1 ends here
 
+;; [[file:config.org::*Copy/Paste][Copy/Paste:1]]
+; wsl-copy
+(defun wsl-copy (start end)
+  (interactive "r")
+  (shell-command-on-region start end "clip.exe")
+  (deactivate-mark))
+
+; wsl-paste
+(defun wsl-paste ()
+  (interactive)
+  (let ((clipboard
+     (shell-command-to-string "powershell.exe -command 'Get-Clipboard' 2> /dev/null")))
+    (setq clipboard (replace-regexp-in-string "\r" "" clipboard)) ; Remove Windows ^M characters
+    (setq clipboard (substring clipboard 0 -1)) ; Remove newline added by Powershell
+    (insert clipboard)))
+;; Copy/Paste:1 ends here
+
+;; [[file:config.org::*Copy/Paste][Copy/Paste:2]]
+; Bind wsl-copy to C-c C-v
+(global-set-key
+ (kbd "C-c C-c")
+ 'wsl-copy)
+
+; Bind wsl-paste to C-c C-v
+(global-set-key
+ (kbd "C-c C-v")
+ 'wsl-paste)
+;; Copy/Paste:2 ends here
+
 ;; [[file:config.org::*Doom modeline][Doom modeline:1]]
 (after! doom-modeline
   (doom-modeline-def-segment buffer-name
@@ -5980,21 +6009,7 @@ preview-default-preamble "\\fi}\"%' \"\\detokenize{\" %t \"}\""))
         "ExtJS" "JQuery" "JQuery_Mobile" "JQuery_UI" "KnockoutJS" "Lo-Dash"
         "MarionetteJS" "MomentJS" "NodeJS" "PrototypeJS" "React" "RequireJS"
         "SailsJS" "UnderscoreJS" "VueJS" "ZeptoJS")
-      (set-ligatures! mode
-        ;; Functional
-        :def "function"
-        :lambda "() =>"
-        :composition "compose"
-        ;; Types
-        :null "null"
-        :true "true" :false "false"
-        ;; Flow
-        :not "!"
-        :and "&&" :or "||"
-        :for "for"
-        :return "return"
-        ;; Other
-        :yield "import"))))
+      (set-ligatures! mode))))
 
 
 (use-package! rjsx-mode

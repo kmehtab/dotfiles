@@ -24,6 +24,7 @@ export PATH="$PATH:$GEM_HOME/bin"
 export VISUAL=vim;
 export EDITOR=vim;
 export PATH="$HOME/.emacs.d/bin:$PATH"
+export $(dbus-launch)
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
