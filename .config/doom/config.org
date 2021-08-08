@@ -1,6 +1,6 @@
 #+title: Doom Emacs Configuration
 #+subtitle: The Methods, Management, and Menagerie@@latex:\\@@ of Madness@@latex: --- in meticulous detail@@
-#+author: tecosaur
+#+author: kmehtab
 #+date: @@html:<!--@@{{{git-rev}}}@@html:-->@@@@latex:\\\Large\bfseries@@ {{{modification-time(%Y-%m-%d, t)}}} @@latex:\\\normalsize\mdseries@@{{{modification-time(%H:%M, t)}}} @@latex:\acr{\lowercase{@@{{{timezone}}}@@latex:}}\iffalse@@, {{{git-rev}}}@@latex:\fi@@
 #+macro: timezone (eval (substring (shell-command-to-string "date +%Z") 0 -1))
 #+macro: git-rev (eval (format "@@html:<a href=\"https://github.com/tecosaur/emacs-config/commit/%1$s\" style=\"text-decoration: none\"><code style=\"padding: 0; color: var(--text-light); font-size: inherit; opacity: 0.7\">%1$s</code></a>@@@@latex:\\href{https://github.com/tecosaur/emacs-config/commit/%1$s}{\\normalsize\\texttt{%1$s}}@@" (substring (shell-command-to-string "git rev-parse --short HEAD") 0 -1)))
@@ -11,23 +11,6 @@
 #+property: header-args :tangle no :results silent :eval no-export
 #+options: coverpage:yes
 #+startup: fold
-
-#+begin_export html
-<a href="https://github.com/kmehtab/emacs-config/"
-   style="font-family: 'Open Sans'; background-image: none; color: inherit;
-   text-decoration: none; position: relative; top: clamp(-26px, calc(1280px - 100vw), 0px); opacity: 0.7;">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg"
-       class="invertible" alt="GitHub Octicon"
-       style="height: 1em; position: relative; top: 0.1em;">
-  View on GitHub</a>
-#+end_export
-
-#+begin_quote
-Let us change our traditional attitude to the construction of programs:
-Instead of imagining that our main task is to instruct a computer what to do,
-let us concentrate rather on explaining to human beings what we want a
-computer to do. @@latex:\mbox{@@--- Donald Knuth@@latex:}@@
-#+end_quote
 
 * Intro
 Customising an editor can be very rewarding ... until you have to leave it.
@@ -314,8 +297,8 @@ for more info).
 ** Personal Information
 It's useful to have some basic personal information
 #+begin_src emacs-lisp
-(setq user-full-name "TEC"
-      user-mail-address "tec@tecosaur.com")
+(setq user-full-name "kmehtab"
+      user-mail-address "kmehtab20@gmail.com")
 #+end_src
 Apparently this is used by ~GPG~, and all sorts of other things.
 
@@ -719,7 +702,7 @@ fiddle with the font sizes a tad so that they visually match. Just for fun I'm
 trying out JetBrains Mono though. So far I have mixed feelings on it, some
 aspects are nice, but on others I prefer Fira.
 #+begin_src emacs-lisp
-(setq doom-font (font-spec :family "JetBrains Mono" :size 15)
+(setq doom-font (font-spec :family "FiraCode Nerd Font" :size 15)
       doom-big-font (font-spec :family "JetBrains Mono" :size 20)
       doom-variable-pitch-font (font-spec :family "Overpass" :size 15)
       doom-unicode-font (font-spec :family "JuliaMono")
@@ -776,7 +759,6 @@ if the system doesn't have any of those fonts.
 
 This way whenever fonts are missing, after Doom's UI has initialised, a warning
 listing the missing fonts should appear for at least half a second.
-
 
 **** Theme and modeline
 ~doom-one~ is nice and all, but I find the ~vibrant~ variant nicer. Oh, and with the
@@ -999,101 +981,6 @@ Now we just make it theme-appropriate, and resize with the frame.
 (add-hook 'doom-load-theme-hook #'set-appropriate-splash)
 #+end_src
 
-Now the only thing missing is a an extra interesting line, whether that be some
-corporate BS, an developer excuse, or a fun (useless) fact.
-
-The following is rather long, but it essentially
-+ fetches a phrase from an API
-+ inserts it into the dashboard (asynchronously)
-+ moves ~point~ to the phrase
-+ re-uses the last phrase for requests within a few seconds of it being fetched
-
-#+begin_src emacs-lisp
-(defvar phrase-api-url
-  (nth (random 3)
-       '(("https://corporatebs-generator.sameerkumar.website/" :phrase)
-         ("https://useless-facts.sameerkumar.website/api" :data)
-         ("https://dev-excuses-api.herokuapp.com/" :text))))
-
-(defmacro phrase-generate-callback (token &optional format-fn ignore-read-only callback buffer-name)
-  `(lambda (status)
-     (unless (plist-get status :error)
-       (goto-char url-http-end-of-headers)
-       (let ((phrase (plist-get (json-parse-buffer :object-type 'plist) (cadr phrase-api-url)))
-             (inhibit-read-only ,(when (eval ignore-read-only) t)))
-         (setq phrase-last (cons phrase (float-time)))
-         (with-current-buffer ,(or (eval buffer-name) (buffer-name (current-buffer)))
-           (save-excursion
-             (goto-char (point-min))
-             (when (search-forward ,token nil t)
-               (with-silent-modifications
-                 (replace-match "")
-                 (insert ,(if format-fn format-fn 'phrase)))))
-           ,callback)))))
-
-(defvar phrase-last nil)
-(defvar phrase-timeout 5)
-
-(defmacro phrase-insert-async (&optional format-fn token ignore-read-only callback buffer-name)
-  `(let ((inhibit-message t))
-     (if (and phrase-last
-              (> phrase-timeout (- (float-time) (cdr phrase-last))))
-         (let ((phrase (car phrase-last)))
-           ,(if format-fn format-fn 'phrase))
-       (url-retrieve (car phrase-api-url)
-                     (phrase-generate-callback ,(or token "\ufeff") ,format-fn ,ignore-read-only ,callback ,buffer-name))
-       ;; For reference, \ufeff = Zero-width no-break space / BOM
-       ,(or token "\ufeff"))))
-
-(defun doom-dashboard-phrase ()
-  (phrase-insert-async
-   (progn
-     (setq-local phrase-position (point))
-     (mapconcat
-      (lambda (line)
-        (+doom-dashboard--center
-         +doom-dashboard--width
-         (with-temp-buffer
-           (insert-text-button
-            line
-            'action
-            (lambda (_)
-              (setq phrase-last nil)
-              (+doom-dashboard-reload t))
-            'face 'doom-dashboard-menu-title
-            'mouse-face 'doom-dashboard-menu-title
-            'help-echo "Random phrase"
-            'follow-link t)
-           (buffer-string))))
-      (split-string
-       (with-temp-buffer
-         (insert phrase)
-         (setq fill-column (min 70 (/ (* 2 (window-width)) 3)))
-         (fill-region (point-min) (point-max))
-         (buffer-string))
-       "\n")
-      "\n"))
-   nil t
-   (progn
-     (goto-char phrase-position)
-     (forward-whitespace 1))
-   +doom-dashboard-name))
-
-(defadvice! doom-dashboard-widget-loaded-with-phrase ()
-  :override #'doom-dashboard-widget-loaded
-  (setq line-spacing 0.2)
-  (insert
-   "\n\n"
-   (propertize
-    (+doom-dashboard--center
-     +doom-dashboard--width
-     (doom-display-benchmark-h 'return))
-    'face 'doom-dashboard-loaded)
-   "\n"
-   (doom-dashboard-phrase)
-   "\n"))
-#+end_src
-
 Lastly, the doom dashboard "useful commands" are no longer useful to me.
 So, we'll disable them and then for a particularly /clean/ look disable
 the modeline and ~hl-line-mode~, then also hide the cursor.
@@ -1133,7 +1020,6 @@ something simple.
 (unless (display-graphic-p) ; for some reason this messes up the graphical splash screen atm
   (setq +doom-dashboard-ascii-banner-fn #'doom-dashboard-draw-ascii-emacs-banner-fn))
 #+end_src
-
 
 *** Systemd daemon
 For running a systemd service for a Emacs server I have the following
@@ -2148,6 +2034,15 @@ icon. Then we'll redefine two functions used to generate the modeline.
     '(misc-info matches major-mode process vcs)))
 #+end_src
 
+#+begin_src emacs-lisp
+(with-eval-after-load 'subr-x
+  (setq-default mode-line-buffer-identification
+                '(:eval (format-mode-line (propertized-buffer-identification (or (when-let* ((buffer-file-truename buffer-file-truename)
+                                                                                             (prj (cdr-safe (project-current)))
+                                                                                             (prj-parent (file-name-directory (directory-file-name (expand-file-name prj)))))
+                                                                                   (concat (file-relative-name (file-name-directory buffer-file-truename) prj-parent) (file-name-nondirectory buffer-file-truename)))
+                                                                                 "%b"))))))
+#+end_src
 ** Elcord
 #+begin_src emacs-lisp
 (setq elcord-use-major-mode-as-main-icon t)
@@ -2587,7 +2482,7 @@ tweaks. Namely:
                       visual-fill-column-width 60
                       org-adapt-indentation nil)
                 (when (featurep 'org-superstar)
-                  (setq-local org-superstar-headline-bullets-list '("🙘" "🙙" "🙚" "🙛")
+                  (setq-local org-superstar-headline-bullets-list '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
                               ;; org-superstar-headline-bullets-list '("🙐" "🙑" "🙒" "🙓" "🙔" "🙕" "🙖" "🙗")
                               org-superstar-remove-leading-stars t)
                   (org-superstar-restart))
