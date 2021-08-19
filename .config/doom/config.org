@@ -560,7 +560,7 @@ vterm                        ; the best terminal emulation in Emacs
 #+begin_src emacs-lisp
 syntax                       ; tasing you for every semicolon you forget
 ;(:if (executable-find "aspell") spell) ; tasing you for misspelling mispelling
-grammar                      ; tasing grammar mistake every you make
+;;grammar                      ; tasing grammar mistake every you make
 #+end_src
 
 #+name: doom-tools
