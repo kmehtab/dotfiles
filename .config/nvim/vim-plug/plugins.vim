@@ -35,6 +35,7 @@ call plug#begin('~/.config/nvim/autoload/plugged')
     Plug 'junegunn/rainbow_parentheses.vim'
 
     Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+    Plug 'junegunn/fzf.vim'
     
     Plug 'norcalli/nvim-colorizer.lua'
     Plug 'junegunn/rainbow_parentheses.vim'
