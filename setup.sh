@@ -25,7 +25,6 @@ function linkDotfile {
   ln -s ${dotfilesDir}/${1} ${dest}
 }
 
-linkDotfile .vimrc
 linkDotfile .zshrc
 linkDotfile .gitconfig
 linkDotfile .gitignore
