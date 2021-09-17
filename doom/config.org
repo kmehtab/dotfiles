@@ -1,6 +1,6 @@
 #+title: Doom Emacs Configuration
 #+subtitle: The Methods, Management, and Menagerie@@latex:\\@@ of Madness@@latex: --- in meticulous detail@@
-#+author: tecosaur
+#+author: kmehtab
 #+date: @@html:<!--@@{{{git-rev}}}@@html:-->@@@@latex:\\\Large\bfseries@@ {{{modification-time(%Y-%m-%d, t)}}} @@latex:\\\normalsize\mdseries@@{{{modification-time(%H:%M, t)}}} @@latex:\acr{\lowercase{@@{{{timezone}}}@@latex:}}\iffalse@@, {{{git-rev}}}@@latex:\fi@@
 #+macro: timezone (eval (substring (shell-command-to-string "date +%Z") 0 -1))
 #+macro: git-rev (eval (format "@@html:<a href=\"https://github.com/tecosaur/emacs-config/commit/%1$s\" style=\"text-decoration: none\"><code style=\"padding: 0; color: var(--text-light); font-size: inherit; opacity: 0.7\">%1$s</code></a>@@@@latex:\\href{https://github.com/tecosaur/emacs-config/commit/%1$s}{\\normalsize\\texttt{%1$s}}@@" (substring (shell-command-to-string "git rev-parse --short HEAD") 0 -1)))
@@ -11,23 +11,6 @@
 #+property: header-args :tangle no :results silent :eval no-export
 #+options: coverpage:yes
 #+startup: fold
-
-#+begin_export html
-<a href="https://github.com/kmehtab/emacs-config/"
-   style="font-family: 'Open Sans'; background-image: none; color: inherit;
-   text-decoration: none; position: relative; top: clamp(-26px, calc(1280px - 100vw), 0px); opacity: 0.7;">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg"
-       class="invertible" alt="GitHub Octicon"
-       style="height: 1em; position: relative; top: 0.1em;">
-  View on GitHub</a>
-#+end_export
-
-#+begin_quote
-Let us change our traditional attitude to the construction of programs:
-Instead of imagining that our main task is to instruct a computer what to do,
-let us concentrate rather on explaining to human beings what we want a
-computer to do. @@latex:\mbox{@@--- Donald Knuth@@latex:}@@
-#+end_quote
 
 * Intro
 Customising an editor can be very rewarding ... until you have to leave it.
@@ -314,8 +297,8 @@ for more info).
 ** Personal Information
 It's useful to have some basic personal information
 #+begin_src emacs-lisp
-(setq user-full-name "TEC"
-      user-mail-address "tec@tecosaur.com")
+(setq user-full-name "kmehtab"
+      user-mail-address "kmehtab20@gmail.com")
 #+end_src
 Apparently this is used by ~GPG~, and all sorts of other things.
 
@@ -349,9 +332,6 @@ the following:
       scroll-margin 2)                            ; It's nice to maintain a little margin
 
 (display-time-mode 1)                             ; Enable time in the mode-line
-
-(unless (string-match-p "^Power N/A" (battery))   ; On laptops...
-  (display-battery-mode 1))                       ; it's nice to know how much power you have
 
 (global-subword-mode 1)                           ; Iterate through CamelCase words
 #+end_src
@@ -580,7 +560,7 @@ vterm                        ; the best terminal emulation in Emacs
 #+begin_src emacs-lisp
 syntax                       ; tasing you for every semicolon you forget
 ;(:if (executable-find "aspell") spell) ; tasing you for misspelling mispelling
-grammar                      ; tasing grammar mistake every you make
+;;grammar                      ; tasing grammar mistake every you make
 #+end_src
 
 #+name: doom-tools
@@ -722,7 +702,7 @@ fiddle with the font sizes a tad so that they visually match. Just for fun I'm
 trying out JetBrains Mono though. So far I have mixed feelings on it, some
 aspects are nice, but on others I prefer Fira.
 #+begin_src emacs-lisp
-(setq doom-font (font-spec :family "JetBrains Mono" :size 15)
+(setq doom-font (font-spec :family "FiraCode Nerd Font" :size 15)
       doom-big-font (font-spec :family "JetBrains Mono" :size 20)
       doom-variable-pitch-font (font-spec :family "Overpass" :size 15)
       doom-unicode-font (font-spec :family "JuliaMono")
@@ -808,10 +788,6 @@ thus not worth noting in the modeline. So, let's conditionally hide it.
 
 (add-hook 'after-change-major-mode-hook #'doom-modeline-conditional-buffer-encoding)
 #+end_src
-
-#+begin_src emacs-lisp
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
-#+end_src
 **** Miscellaneous
 Relative line numbers are fantastic for knowing how far away line numbers are,
 then =ESC 12 <UP>= gets you exactly where you think.
@@ -819,12 +795,16 @@ then =ESC 12 <UP>= gets you exactly where you think.
 (setq display-line-numbers-type 'relative)
 #+end_src
 
+open emacs in full screen
+#+begin_src emacs-lisp
+(add-to-list 'initial-frame-alist '(fullscreen . maximized))
+#+end_src
+
 I'd like some slightly nicer default buffer names
 #+begin_src emacs-lisp
 (setq doom-fallback-buffer-name "► Doom"
       +doom-dashboard-name "► Doom")
 #+end_src
-
 *** Some helper macros
 There are a few handy macros added by doom, namely
 - ~load!~ for loading external ~.el~ files relative to this one
@@ -1001,101 +981,6 @@ Now we just make it theme-appropriate, and resize with the frame.
 (add-hook 'doom-load-theme-hook #'set-appropriate-splash)
 #+end_src
 
-Now the only thing missing is a an extra interesting line, whether that be some
-corporate BS, an developer excuse, or a fun (useless) fact.
-
-The following is rather long, but it essentially
-+ fetches a phrase from an API
-+ inserts it into the dashboard (asynchronously)
-+ moves ~point~ to the phrase
-+ re-uses the last phrase for requests within a few seconds of it being fetched
-
-#+begin_src emacs-lisp
-(defvar phrase-api-url
-  (nth (random 3)
-       '(("https://corporatebs-generator.sameerkumar.website/" :phrase)
-         ("https://useless-facts.sameerkumar.website/api" :data)
-         ("https://dev-excuses-api.herokuapp.com/" :text))))
-
-(defmacro phrase-generate-callback (token &optional format-fn ignore-read-only callback buffer-name)
-  `(lambda (status)
-     (unless (plist-get status :error)
-       (goto-char url-http-end-of-headers)
-       (let ((phrase (plist-get (json-parse-buffer :object-type 'plist) (cadr phrase-api-url)))
-             (inhibit-read-only ,(when (eval ignore-read-only) t)))
-         (setq phrase-last (cons phrase (float-time)))
-         (with-current-buffer ,(or (eval buffer-name) (buffer-name (current-buffer)))
-           (save-excursion
-             (goto-char (point-min))
-             (when (search-forward ,token nil t)
-               (with-silent-modifications
-                 (replace-match "")
-                 (insert ,(if format-fn format-fn 'phrase)))))
-           ,callback)))))
-
-(defvar phrase-last nil)
-(defvar phrase-timeout 5)
-
-(defmacro phrase-insert-async (&optional format-fn token ignore-read-only callback buffer-name)
-  `(let ((inhibit-message t))
-     (if (and phrase-last
-              (> phrase-timeout (- (float-time) (cdr phrase-last))))
-         (let ((phrase (car phrase-last)))
-           ,(if format-fn format-fn 'phrase))
-       (url-retrieve (car phrase-api-url)
-                     (phrase-generate-callback ,(or token "\ufeff") ,format-fn ,ignore-read-only ,callback ,buffer-name))
-       ;; For reference, \ufeff = Zero-width no-break space / BOM
-       ,(or token "\ufeff"))))
-
-(defun doom-dashboard-phrase ()
-  (phrase-insert-async
-   (progn
-     (setq-local phrase-position (point))
-     (mapconcat
-      (lambda (line)
-        (+doom-dashboard--center
-         +doom-dashboard--width
-         (with-temp-buffer
-           (insert-text-button
-            line
-            'action
-            (lambda (_)
-              (setq phrase-last nil)
-              (+doom-dashboard-reload t))
-            'face 'doom-dashboard-menu-title
-            'mouse-face 'doom-dashboard-menu-title
-            'help-echo "Random phrase"
-            'follow-link t)
-           (buffer-string))))
-      (split-string
-       (with-temp-buffer
-         (insert phrase)
-         (setq fill-column (min 70 (/ (* 2 (window-width)) 3)))
-         (fill-region (point-min) (point-max))
-         (buffer-string))
-       "\n")
-      "\n"))
-   nil t
-   (progn
-     (goto-char phrase-position)
-     (forward-whitespace 1))
-   +doom-dashboard-name))
-
-(defadvice! doom-dashboard-widget-loaded-with-phrase ()
-  :override #'doom-dashboard-widget-loaded
-  (setq line-spacing 0.2)
-  (insert
-   "\n\n"
-   (propertize
-    (+doom-dashboard--center
-     +doom-dashboard--width
-     (doom-display-benchmark-h 'return))
-    'face 'doom-dashboard-loaded)
-   "\n"
-   (doom-dashboard-phrase)
-   "\n"))
-#+end_src
-
 Lastly, the doom dashboard "useful commands" are no longer useful to me.
 So, we'll disable them and then for a particularly /clean/ look disable
 the modeline and ~hl-line-mode~, then also hide the cursor.
@@ -1135,7 +1020,6 @@ something simple.
 (unless (display-graphic-p) ; for some reason this messes up the graphical splash screen atm
   (setq +doom-dashboard-ascii-banner-fn #'doom-dashboard-draw-ascii-emacs-banner-fn))
 #+end_src
-
 
 *** Systemd daemon
 For running a systemd service for a Emacs server I have the following
@@ -1491,6 +1375,11 @@ This is a nice extension to ~calc~
                            :files ("*.el" "calctex/*.el" "calctex-contrib/*.el" "org-calctex/*.el" "vendor"))
   :pin "784cf911bc96aac0f47d529e8cee96ebd7cc31c9")
 #+end_src
+**** Centuar Tabs
+#+begin_src emacs-lisp
+(package! centaur-tabs)
+#+end_src
+
 **** ESS
 View data frames better with
 #+begin_src emacs-lisp
@@ -1608,6 +1497,13 @@ these as horizontal rules.
 
 ;; Start GPG agent with SSH support
 (shell-command "gpg-connect-agent /bye")
+#+end_src
+
+**** MacOs
+deleting files or folders in emacs will go to trash
+#+begin_src emacs-lisp
+(package! osx-trash :pin "0f1dc052d0a750b8c75f14530a4897f5d4324b4e")
+(package! ns-auto-titlebar :pin "60273e764bf8d95abc40dd2fdc23af87ea9ee33b")
 #+end_src
 
 ** Language packages
@@ -1844,33 +1740,34 @@ For editing systemd unit files
 (package! systemd :pin "b6ae63a236605b1c5e1069f7d3afe06ae32a7bae")
 #+end_src
 *** JavaScript
-Major mode
+ Major modes
 #+begin_src emacs-lisp
 (package! rjsx-mode :pin "b697fe4d92cc84fa99a7bcb476f815935ea0d919")
 (package! typescript-mode :pin "1043025d42602d560949955410d3afa2562130ee")
 #+end_src
 
-Tools
+ Tools
 #+begin_src emacs-lisp
 (package! js2-refactor :pin "a0977c4ce1918cc266db9d6cd7a2ab63f3a76b9a")
 (package! npm-mode :pin "3ee7c0bad5b7a041d4739ef3aaa06a3dc764e5eb")
 (package! add-node-modules-path :pin "7d9be65b3be062842b7ead862dec15d6f25db4a2")
 #+end_src
 
-evals
+ Eval
 #+begin_src emacs-lisp
 (package! nodejs-repl :pin "3b841055cad00f442e4a9159b1056f59411b6646")
 (package! skewer-mode :pin "e5bed351939c92a1f788f78398583c2f83f1bb3c")
 #+end_src
 
-Programming environment
+ Programming environment
 #+begin_src emacs-lisp
 (package! tide :pin "ccff099e94beda9f5378ffc2b412cb4257111e8d")
 (when (featurep! :tools lookup)
   (package! xref-js2 :pin "fd6b723e7f1f9793d189a815e1904364dc026b03"))
 #+end_src
+#+end_src
 
-* [#B] Package configuration
+* Package configuration
 ** Abbrev mode
 Thanks to [[https://emacs.stackexchange.com/questions/45462/use-a-single-abbrev-table-for-multiple-modes/45476#45476][use a single abbrev-table for multiple modes? - Emacs Stack Exchange]] I
 have the following.
@@ -2035,16 +1932,24 @@ inside the src_elisp{(after! ... )} block ¯\_(ツ)_/¯.
 Then let's change the font to a sans serif, but the default one doesn't fit too
 well somehow, so let's switch to 'P22 Underground Book'; it looks much nicer.
 #+begin_src emacs-lisp
-(after! centaur-tabs
-  (centaur-tabs-mode -1)
-  (setq centaur-tabs-height 36
-        centaur-tabs-set-icons t
-        centaur-tabs-modified-marker "o"
-        centaur-tabs-close-button "×"
-        centaur-tabs-set-bar 'above
-        centaur-tabs-gray-out-icons 'buffer)
-  (centaur-tabs-change-fonts "P22 Underground Book" 160))
-;; (setq x-underline-at-descent-line t)
+(use-package! centaur-tabs
+  :hook (doom-first-file . centaur-tabs-mode)
+  :init
+  (setq centaur-tabs-set-icons t
+        centaur-tabs-gray-out-icons 'buffer
+        centaur-tabs-set-bar 'left
+        centaur-tabs-style "wave"
+        centaur-tabs-set-modified-marker t
+        centaur-tabs-close-button "✕"
+        centaur-tabs-modified-marker "•"
+        ;; Scrolling (with the mouse wheel) past the end of the tab list
+        ;; replaces the tab list with that of another Doom workspace. This
+        ;; prevents that.
+        centaur-tabs-cycle-scope 'tabs)
+
+  :config
+  (add-hook '+doom-dashboard-mode-hook #'centaur-tabs-local-mode)
+  (add-hook '+popup-buffer-mode-hook #'centaur-tabs-local-mode))
 #+end_src
 ** Company
 It's nice to have completions almost all the time, in my opinion. Key strokes
@@ -2080,37 +1985,6 @@ We then configure the dictionary we're using in [[*Ispell][Ispell]].
 #+begin_src emacs-lisp
 (set-company-backend! 'ess-r-mode '(company-R-args company-R-objects company-dabbrev-code :separate))
 #+end_src
-** Copy/Paste
-
-#+begin_src emacs-lisp
-; wsl-copy
-(defun wsl-copy (start end)
-  (interactive "r")
-  (shell-command-on-region start end "clip.exe")
-  (deactivate-mark))
-
-; wsl-paste
-(defun wsl-paste ()
-  (interactive)
-  (let ((clipboard
-     (shell-command-to-string "powershell.exe -command 'Get-Clipboard' 2> /dev/null")))
-    (setq clipboard (replace-regexp-in-string "\r" "" clipboard)) ; Remove Windows ^M characters
-    (setq clipboard (substring clipboard 0 -1)) ; Remove newline added by Powershell
-    (insert clipboard)))
-#+end_src
-
-#+begin_src emacs-lisp
-; Bind wsl-copy to C-c C-v
-(global-set-key
- (kbd "C-c C-c")
- 'wsl-copy)
-
-; Bind wsl-paste to C-c C-v
-(global-set-key
- (kbd "C-c C-v")
- 'wsl-paste)
-#+end_src
-
 ** Doom modeline
 Very nice and pretty, however I think the PDF modeline could do with tweaking.
 I raised [[https://github.com/seagle0128/doom-modeline/pull/425][an issue]] on this, however the response was basically "put your
@@ -2160,6 +2034,15 @@ icon. Then we'll redefine two functions used to generate the modeline.
     '(misc-info matches major-mode process vcs)))
 #+end_src
 
+#+begin_src emacs-lisp
+(with-eval-after-load 'subr-x
+  (setq-default mode-line-buffer-identification
+                '(:eval (format-mode-line (propertized-buffer-identification (or (when-let* ((buffer-file-truename buffer-file-truename)
+                                                                                             (prj (cdr-safe (project-current)))
+                                                                                             (prj-parent (file-name-directory (directory-file-name (expand-file-name prj)))))
+                                                                                   (concat (file-relative-name (file-name-directory buffer-file-truename) prj-parent) (file-name-nondirectory buffer-file-truename)))
+                                                                                 "%b"))))))
+#+end_src
 ** Elcord
 #+begin_src emacs-lisp
 (setq elcord-use-major-mode-as-main-icon t)
@@ -2259,6 +2142,74 @@ increase the maximum number of items ivy will sort to 40k + a bit, this way
 #+begin_src emacs-lisp
 (setq ivy-sort-max-size 50000)
 #+end_src
+** MacOs
+Reasonable defaults for macOS
+#+begin_src emacs-lisp
+;; Use spotlight search backend as a default for M-x locate (and helm/ivy
+;; variants thereof), since it requires no additional setup.
+(setq locate-command "mdfind")
+
+
+;;
+;;; Compatibilty fixes
+
+;; Curse Lion and its sudden but inevitable fullscreen mode!
+;; NOTE Meaningless to railwaycat's emacs-mac build
+(setq ns-use-native-fullscreen nil)
+
+;; Visit files opened outside of Emacs in existing frame, not a new one
+(setq ns-pop-up-frames nil)
+
+;; sane trackpad/mouse scroll settings
+(setq mac-redisplay-dont-reset-vscroll t
+      mac-mouse-wheel-smooth-scroll nil)
+#+end_src
+
+Sets `ns-transparent-titlebar' and `ns-appearance' frame parameters so window
+#+begin_src emacs-lisp
+;; borders will match the enabled theme.
+(and (or (daemonp)
+         (display-graphic-p))
+     (require 'ns-auto-titlebar nil t)
+     (ns-auto-titlebar-mode +1))
+
+;; HACK On MacOS, disabling the menu bar makes MacOS treat Emacs as a
+;;      non-application window -- which means it doesn't automatically capture
+;;      focus when it is started, among other things, so enable the menu-bar for
+;;      GUI frames, but keep it disabled in terminal frames because there it
+;;      activates an ugly, in-frame menu bar.
+(add-hook! '(window-setup-hook after-make-frame-functions)
+  (defun doom-init-menu-bar-in-gui-frames-h (&optional frame)
+    "Re-enable menu-bar-lines in GUI frames."
+    (when-let (frame (or frame (selected-frame)))
+      (when (display-graphic-p frame)
+        (set-frame-parameter frame 'menu-bar-lines 1)))))
+
+#+end_src
+
+integrete with keychain
+#+begin_src emacs-lisp
+(after! auth-source
+  (pushnew! auth-sources 'macos-keychain-internet 'macos-keychain-generic))
+#+end_src
+
+osx trash
+#+begin_src emacs-lisp
+
+(use-package! osx-trash
+  :commands osx-trash-move-file-to-trash
+  :init
+  ;; Delete files to trash on macOS, as an extra layer of precaution against
+  ;; accidentally deleting wanted files.
+  (setq delete-by-moving-to-trash t)
+
+  ;; Lazy load `osx-trash'
+  (and IS-MAC
+       (not (fboundp 'system-move-file-to-trash))
+       (defalias #'system-move-file-to-trash #'osx-trash-move-file-to-trash)))
+
+#+end_src
+
 ** Magit
 Magit is pretty nice by default. The diffs don't get any
 syntax-highlighting-love though which is a bit sad. Thankfully
@@ -2531,7 +2482,7 @@ tweaks. Namely:
                       visual-fill-column-width 60
                       org-adapt-indentation nil)
                 (when (featurep 'org-superstar)
-                  (setq-local org-superstar-headline-bullets-list '("🙘" "🙙" "🙚" "🙛")
+                  (setq-local org-superstar-headline-bullets-list '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
                               ;; org-superstar-headline-bullets-list '("🙐" "🙑" "🙒" "🙓" "🙔" "🙕" "🙖" "🙗")
                               org-superstar-remove-leading-stars t)
                   (org-superstar-restart))
@@ -2852,7 +2803,7 @@ something through Emacs?
 (use-package! calibredb
   :commands calibredb
   :config
-  (setq calibredb-root-dir "~/Desktop/TEC/Other/Ebooks"
+  (setq calibredb-root-dir "~/Documents/Epub-books"
         calibredb-db-dir (expand-file-name "metadata.db" calibredb-root-dir))
   (map! :map calibredb-show-mode-map
         :ne "?" #'calibredb-entry-dispatch
@@ -9180,16 +9131,15 @@ Lastly, whenever Emacs is non-graphical (i.e. a TUI), we want to use this by def
 #+end_src
 
 ** JavaScript
-
 #+begin_src emacs-lisp
 (after! projectile
   (pushnew! projectile-project-root-files "package.json")
   (pushnew! projectile-globally-ignored-directories "node_modules" "flow-typed"))
 #+end_src
 
-*** Major Mode
-
+ Major modes
 #+begin_src emacs-lisp
+
 (dolist (feature '(rjsx-mode
                    typescript-mode
                    web-mode
@@ -9202,7 +9152,21 @@ Lastly, whenever Emacs is non-graphical (i.e. a TUI), we want to use this by def
         "ExtJS" "JQuery" "JQuery_Mobile" "JQuery_UI" "KnockoutJS" "Lo-Dash"
         "MarionetteJS" "MomentJS" "NodeJS" "PrototypeJS" "React" "RequireJS"
         "SailsJS" "UnderscoreJS" "VueJS" "ZeptoJS")
-      (set-ligatures! mode))))
+      (set-ligatures! mode
+        ;; Functional
+        :def "function"
+        :lambda "() =>"
+        :composition "compose"
+        ;; Types
+        :null "null"
+        :true "true" :false "false"
+        ;; Flow
+        :not "!"
+        :and "&&" :or "||"
+        :for "for"
+        :return "return"
+        ;; Other
+        :yield "import"))))
 
 
 (use-package! rjsx-mode
@@ -9314,8 +9278,7 @@ Lastly, whenever Emacs is non-graphical (i.e. a TUI), we want to use this by def
 
 #+end_src
 
-*** Tools
-
+Tools
 #+begin_src emacs-lisp
 
 (add-hook! '(typescript-mode-local-vars-hook
@@ -9415,7 +9378,10 @@ to tide."
     (let ((js2-refactor-mode-map (evil-get-auxiliary-keymap js2-refactor-mode-map 'normal t t)))
       (js2r-add-keybindings-with-prefix (format "%s r" doom-localleader-key)))))
 
+#+end_src
 
+packages
+#+begin_src emacs-lisp
 ;;;###package skewer-mode
 (map! :localleader
       (:after js2-mode
@@ -9451,11 +9417,10 @@ to tide."
         (:after js2-mode
           :map js2-mode-map
           :prefix ("n" . "npm"))))
-#+end_src
 
-*** Projects
 
-#+begin_src emacs-lisp
+;;
+;;; Projects
 
 (def-project-mode! +javascript-npm-mode
   :modes '(html-mode
@@ -9471,6 +9436,5 @@ to tide."
 
 (def-project-mode! +javascript-gulp-mode
   :when (locate-dominating-file default-directory "gulpfile.js"))
-
 
 #+end_src
