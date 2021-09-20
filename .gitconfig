@@ -3,8 +3,10 @@
 	name = kmehtab
 	email = kmehtab20@gmail.com
 	username = kmehtab
-	signingkey = DB1730C21A8F21A3 
+	signingkey = 73F4A197553677E7131BA70B7913FD2F8FE62B56! 
 [gpg]
 	program = gpg
 [commit]
 	gpgsign = true
+[init]
+	defaultBranch = main

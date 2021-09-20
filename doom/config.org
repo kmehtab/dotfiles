@@ -1493,17 +1493,22 @@ these as horizontal rules.
 
 #+begin_src emacs-lisp :tangle yes
  ;; Enable loopback so that pinentry will pop up in emacs
-(pinentry-start)
-
-;; Start GPG agent with SSH support
-(shell-command "gpg-connect-agent /bye")
+(use-package! pinentry
+  :config
+  (setq epa-pinentry-mode 'loopback)
+  (pinentry-start))
 #+end_src
 
-**** MacOs
-deleting files or folders in emacs will go to trash
+**** Pass Emacs
+
 #+begin_src emacs-lisp
-(package! osx-trash :pin "0f1dc052d0a750b8c75f14530a4897f5d4324b4e")
-(package! ns-auto-titlebar :pin "60273e764bf8d95abc40dd2fdc23af87ea9ee33b")
+(package! pass)
+#+end_src
+
+#+begin_src emacs-lisp :tangle yes
+(use-package! pass
+   :config
+   (setq epa-pinentry-mode 'loopback))
 #+end_src
 
 ** Language packages
@@ -2142,74 +2147,6 @@ increase the maximum number of items ivy will sort to 40k + a bit, this way
 #+begin_src emacs-lisp
 (setq ivy-sort-max-size 50000)
 #+end_src
-** MacOs
-Reasonable defaults for macOS
-#+begin_src emacs-lisp
-;; Use spotlight search backend as a default for M-x locate (and helm/ivy
-;; variants thereof), since it requires no additional setup.
-(setq locate-command "mdfind")
-
-
-;;
-;;; Compatibilty fixes
-
-;; Curse Lion and its sudden but inevitable fullscreen mode!
-;; NOTE Meaningless to railwaycat's emacs-mac build
-(setq ns-use-native-fullscreen nil)
-
-;; Visit files opened outside of Emacs in existing frame, not a new one
-(setq ns-pop-up-frames nil)
-
-;; sane trackpad/mouse scroll settings
-(setq mac-redisplay-dont-reset-vscroll t
-      mac-mouse-wheel-smooth-scroll nil)
-#+end_src
-
-Sets `ns-transparent-titlebar' and `ns-appearance' frame parameters so window
-#+begin_src emacs-lisp
-;; borders will match the enabled theme.
-(and (or (daemonp)
-         (display-graphic-p))
-     (require 'ns-auto-titlebar nil t)
-     (ns-auto-titlebar-mode +1))
-
-;; HACK On MacOS, disabling the menu bar makes MacOS treat Emacs as a
-;;      non-application window -- which means it doesn't automatically capture
-;;      focus when it is started, among other things, so enable the menu-bar for
-;;      GUI frames, but keep it disabled in terminal frames because there it
-;;      activates an ugly, in-frame menu bar.
-(add-hook! '(window-setup-hook after-make-frame-functions)
-  (defun doom-init-menu-bar-in-gui-frames-h (&optional frame)
-    "Re-enable menu-bar-lines in GUI frames."
-    (when-let (frame (or frame (selected-frame)))
-      (when (display-graphic-p frame)
-        (set-frame-parameter frame 'menu-bar-lines 1)))))
-
-#+end_src
-
-integrete with keychain
-#+begin_src emacs-lisp
-(after! auth-source
-  (pushnew! auth-sources 'macos-keychain-internet 'macos-keychain-generic))
-#+end_src
-
-osx trash
-#+begin_src emacs-lisp
-
-(use-package! osx-trash
-  :commands osx-trash-move-file-to-trash
-  :init
-  ;; Delete files to trash on macOS, as an extra layer of precaution against
-  ;; accidentally deleting wanted files.
-  (setq delete-by-moving-to-trash t)
-
-  ;; Lazy load `osx-trash'
-  (and IS-MAC
-       (not (fboundp 'system-move-file-to-trash))
-       (defalias #'system-move-file-to-trash #'osx-trash-move-file-to-trash)))
-
-#+end_src
-
 ** Magit
 Magit is pretty nice by default. The diffs don't get any
 syntax-highlighting-love though which is a bit sad. Thankfully
