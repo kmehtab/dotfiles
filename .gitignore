@@ -5,6 +5,8 @@
 .DS_Store
 Desktop.ini
 nvim/autoload/
+mpd/log
+mpd/state
 
 # Thumbnail cache files
 ._*
