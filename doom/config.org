@@ -702,7 +702,7 @@ fiddle with the font sizes a tad so that they visually match. Just for fun I'm
 trying out JetBrains Mono though. So far I have mixed feelings on it, some
 aspects are nice, but on others I prefer Fira.
 #+begin_src emacs-lisp
-(setq doom-font (font-spec :family "FiraCode Nerd Font" :size 15)
+(setq doom-font (font-spec :family "FiraCode Nerd Font" :size 16)
       doom-big-font (font-spec :family "JetBrains Mono" :size 20)
       doom-variable-pitch-font (font-spec :family "Overpass" :size 15)
       doom-unicode-font (font-spec :family "JuliaMono")
@@ -788,6 +788,20 @@ thus not worth noting in the modeline. So, let's conditionally hide it.
 
 (add-hook 'after-change-major-mode-hook #'doom-modeline-conditional-buffer-encoding)
 #+end_src
+****  Transparency
+doom emacs transparency
+#+begin_src emacs-lisp
+(defconst doom-frame-transparency 90)
+(set-frame-parameter (selected-frame) 'alpha doom-frame-transparency)
+(add-to-list 'default-frame-alist `(alpha . ,doom-frame-transparency))
+(defun dwc-smart-transparent-frame ()
+  (set-frame-parameter
+    (selected-frame)
+    'alpha (if (frame-parameter (selected-frame) 'fullscreen)
+              100
+             doom-frame-transparency)))
+#+end_src
+
 **** Miscellaneous
 Relative line numbers are fantastic for knowing how far away line numbers are,
 then =ESC 12 <UP>= gets you exactly where you think.

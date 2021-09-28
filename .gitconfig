@@ -8,5 +8,7 @@
 	program = gpg
 [commit]
 	gpgsign = true
+[tags]
+	gpgsign = true
 [init]
 	defaultBranch = main

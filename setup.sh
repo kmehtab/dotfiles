@@ -26,11 +26,16 @@ function linkDotfile {
 }
 
 ln -s ~/.dotfiles/.zshrc ~/.zshrc
-ln -s ~/.dotfiles/.gitconfig ~/.gitconfig
-ln -s ~/.dotfiles/.gitignore ~/.gitignore
+ln -sf ~/.dotfiles/.gitconfig ~/.gitconfig
+ln -sf ~/.dotfiles/.gitignore ~/.gitignore
 linkDotfile alacritty
-linkDotfile colorls
+linkDotfile cava 
+linkDotfile doom
+linkDotfile kitty 
+linkDotfile mpd
+linkDotfile mpv
+linkDotfile ncmpcpp 
 linkDotfile nvim
 linkDotfile ranger
 linkDotfile tmux
-linkDotfile doom
+linkDotfile zathura 

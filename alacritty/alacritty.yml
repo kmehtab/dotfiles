@@ -10,7 +10,7 @@ window:
 scrolling:
   history: 10000
   multiplier: 3
-background_opacity: 0.85
+background_opacity: 0.75
 window.dynamic_title: true
 
 # Font Customization
@@ -26,8 +26,8 @@ font:
     style: Italic
   size: 12
   offset:
-    x: 0
-    y: 0
+    x: -1
+    y: -1
   glyph_offset:
     x: 0
     y: 0
@@ -146,7 +146,6 @@ tommorow_night: &tommorow_night
     white:   '#dbdbdb'
 
 colors: *gruvbox_dark
-    
 indexed_colors:
     - { index: 16, color: "0xdc9656" }
     - { index: 17, color: "0xa16946" }
