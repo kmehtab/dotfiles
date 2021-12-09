@@ -227,7 +227,7 @@ If you are so bold as to wish to steal bits of my config (or if I upgrade and
 wonder why things aren't working), here's a list of sections which rely on
 external setup (i.e. outside of this config).
 
-+ dictionary :: I've downloaded a custom [[http://app.aspell.com/create][SCOWL]] dictionary, which I use in [[*Ispell][ispell]].
++ dictionary :: I've downloaded a custom [[http://app.aspell.com/create][SCOWL]] dictionary, which I use in ispell.
   If this causes issues, just delete the src_elisp{(setq ispell-dictionary ...)}
   bit.
 
@@ -282,7 +282,7 @@ change the action to open the Emacs daemon, but it should be possible.
 
 This would probably involve hooking into the daemon's modeline update function
 to write to a temporary file, and having a file watcher started in other Emacs
-instances, in a similar manner to [[*Rebuild mail index while using mu4e][Rebuild mail index while using mu4e]].
+instances, in a similar manner to Rebuild mail index while using mu4e.
 
 * Rudimentary configuration
 Make this file run (slightly) faster with lexical binding (see [[https://nullprogram.com/blog/2016/12/22/][this blog post]]
@@ -503,7 +503,7 @@ doom-quit                    ; DOOM quit-message prompts when you quit Emacs
 hl-todo                      ; highlight TODO/FIXME/NOTE/DEPRECATED/HACK/REVIEW
 ;;hydra                      ; quick documentation for related commands
 ;;indent-guides              ; highlighted indent columns, notoriously slow
-(ligatures +extra)           ; ligatures and symbols to make your code pretty again
+;;(ligatures +extra)           ; ligatures and symbols to make your code pretty again
 ;;minimap                    ; show a map of the code on the side
 modeline                     ; snazzy, Atom-inspired modeline, plus API
 nav-flash                    ; blink the current line after jumping
@@ -1998,7 +1998,7 @@ let's improve that memory.
     company-files
     company-yasnippet))
 #+end_src
-We then configure the dictionary we're using in [[*Ispell][Ispell]].
+We then configure the dictionary we're using in Ispell.
 *** ESS
 ~company-dabbrev-code~ is nice. Let's have it.
 #+begin_src emacs-lisp
@@ -5407,90 +5407,6 @@ I've also added some fun alternatives, just commented out.
         (?E . 'all-the-icons-blue)))
 #+end_src
 It's also nice to make use of the Unicode characters for check boxes, and other commands.
-#+begin_src emacs-lisp
-(appendq! +ligatures-extra-symbols
-          `(:checkbox      "☐"
-            :pending       "◼"
-            :checkedbox    "☑"
-            :list_property "∷"
-            :em_dash       "—"
-            :ellipses      "…"
-            :arrow_right   "→"
-            :arrow_left    "←"
-            :title         "𝙏"
-            :subtitle      "𝙩"
-            :author        "𝘼"
-            :date          "𝘿"
-            :property      "☸"
-            :options       "⌥"
-            :startup       "⏻"
-            :macro         "𝓜"
-            :html_head     "🅷"
-            :html          "🅗"
-            :latex_class   "🄻"
-            :latex_header  "🅻"
-            :beamer_header "🅑"
-            :latex         "🅛"
-            :attr_latex    "🄛"
-            :attr_html     "🄗"
-            :attr_org      "⒪"
-            :begin_quote   "❝"
-            :end_quote     "❞"
-            :caption       "☰"
-            :header        "›"
-            :results       "🠶"
-            :begin_export  "⏩"
-            :end_export    "⏪"
-            :properties    "⚙"
-            :end           "∎"
-            :priority_a   ,(propertize "⚑" 'face 'all-the-icons-red)
-            :priority_b   ,(propertize "⬆" 'face 'all-the-icons-orange)
-            :priority_c   ,(propertize "■" 'face 'all-the-icons-yellow)
-            :priority_d   ,(propertize "⬇" 'face 'all-the-icons-green)
-            :priority_e   ,(propertize "❓" 'face 'all-the-icons-blue)))
-(set-ligatures! 'org-mode
-  :merge t
-  :checkbox      "[ ]"
-  :pending       "[-]"
-  :checkedbox    "[X]"
-  :list_property "::"
-  :em_dash       "---"
-  :ellipsis      "..."
-  :arrow_right   "->"
-  :arrow_left    "<-"
-  :title         "#+title:"
-  :subtitle      "#+subtitle:"
-  :author        "#+author:"
-  :date          "#+date:"
-  :property      "#+property:"
-  :options       "#+options:"
-  :startup       "#+startup:"
-  :macro         "#+macro:"
-  :html_head     "#+html_head:"
-  :html          "#+html:"
-  :latex_class   "#+latex_class:"
-  :latex_header  "#+latex_header:"
-  :beamer_header "#+beamer_header:"
-  :latex         "#+latex:"
-  :attr_latex    "#+attr_latex:"
-  :attr_html     "#+attr_html:"
-  :attr_org      "#+attr_org:"
-  :begin_quote   "#+begin_quote"
-  :end_quote     "#+end_quote"
-  :caption       "#+caption:"
-  :header        "#+header:"
-  :begin_export  "#+begin_export"
-  :end_export    "#+end_export"
-  :results       "#+RESULTS:"
-  :property      ":PROPERTIES:"
-  :end           ":END:"
-  :priority_a    "[#A]"
-  :priority_b    "[#B]"
-  :priority_c    "[#C]"
-  :priority_d    "[#D]"
-  :priority_e    "[#E]")
-(plist-put +ligatures-extra-symbols :name "⁍")
-#+end_src
 
 **** LaTeX Fragments
 ***** Prettier highlighting
@@ -8431,8 +8347,8 @@ information."
 #+end_src
 
 *** Markdown Export
-When I want to paste exported markdown somewhere (for example when using [[Emacs Everywhere][Emacs
-Everywhere]]), it can be preferable to have unicode characters for =---= etc. instead
+When I want to paste exported markdown somewhere (for example when using Emacs
+Everywhere, it can be preferable to have unicode characters for =---= etc. instead
 of =&#x2014;=.
 
 To accomplish this, we just need to locally rebind the alist which provides
@@ -9103,21 +9019,7 @@ Lastly, whenever Emacs is non-graphical (i.e. a TUI), we want to use this by def
         "ExtJS" "JQuery" "JQuery_Mobile" "JQuery_UI" "KnockoutJS" "Lo-Dash"
         "MarionetteJS" "MomentJS" "NodeJS" "PrototypeJS" "React" "RequireJS"
         "SailsJS" "UnderscoreJS" "VueJS" "ZeptoJS")
-      (set-ligatures! mode
-        ;; Functional
-        :def "function"
-        :lambda "() =>"
-        :composition "compose"
-        ;; Types
-        :null "null"
-        :true "true" :false "false"
-        ;; Flow
-        :not "!"
-        :and "&&" :or "||"
-        :for "for"
-        :return "return"
-        ;; Other
-        :yield "import"))))
+      )))
 
 
 (use-package! rjsx-mode
