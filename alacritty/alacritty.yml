@@ -183,7 +183,7 @@ hepburn : &hepburn
     background: '0xdc3232'
     white:   '0xffffff'
 
-colors: *hepburn
+colors: *gruvbox_dark
 indexed_colors:
     - { index: 16, color: "0xdc9656" }
     - { index: 17, color: "0xa16946" }
