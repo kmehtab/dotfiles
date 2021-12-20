@@ -36,6 +36,7 @@ linkDotfile mpd
 linkDotfile mpv
 linkDotfile ncmpcpp 
 linkDotfile nvim
+linkDotfile lvim
 linkDotfile ranger
 linkDotfile tmux
-linkDotfile zathura 
+linkDotfile zathura
