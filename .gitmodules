@@ -1,3 +1,6 @@
 [submodule "bspwm-gruvbox"]
 	path = bspwm-gruvbox
 	url = https://github.com/kmehtab/bspwm-gruvbox/
+[submodule "bspwm-config"]
+	path = bspwm-config
+	url = https://github.com/kmehtab/bspwm-config

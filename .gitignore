@@ -8,6 +8,7 @@ nvim/autoload/
 mpd/log
 mpd/state
 mpd/pid
+mpd/database
 
 # Thumbnail cache files
 ._*
