@@ -4,8 +4,9 @@ window:
     columns: 115
     lines: 33
   padding:
-    x: 5
-    y: 5
+    x: 3
+    y: 1
+  dynamic_padding: true 
   decorations: full
 scrolling:
   history: 10000
@@ -149,7 +150,7 @@ tommorow_night: &tommorow_night
 hepburn : &hepburn
 
   primary:
-    background: '#000000'
+    background: '#1D1D1D'
     foreground: '#fbf1c7'
   normal:
     black:   '#282828'

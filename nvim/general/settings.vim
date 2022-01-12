@@ -46,6 +46,10 @@ cmap w!! w !sudo tee %
 let g:rainbow#max_level = 16
 let g:rainbow#pairs = [['(', ')'], ['[', ']'], ['{', '}']]
 
+" `my_snippets` is the directory we created before
+let g:UltiSnipsSnippetDirectories=["UltiSnips", "my_snippets"]
+let g:UltiSnipsExpandTrigger="<tab>"
+
 "disabe comment
 autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
 autocmd FileType * RainbowParentheses
