@@ -20,6 +20,8 @@
                            :files ("*.el" "calctex/*.el" "calctex-contrib/*.el" "org-calctex/*.el" "vendor"))
   :pin "784cf911bc96aac0f47d529e8cee96ebd7cc31c9")
 
+(package! centaur-tabs)
+
 (package! ess-view :pin "925cafd876e2cc37bc756bb7fcf3f34534b457e2")
 
 ;; (package! magit-delta :recipe (:host github :repo "dandavison/magit-delta") :pin "1164a6c3e501e944f1a6a2e91f15374a193bb8d3")
@@ -40,6 +42,9 @@
 (package! page-break-lines :recipe (:host github :repo "purcell/page-break-lines"))
 
 (package! pinentry)
+
+(package! osx-trash :pin "0f1dc052d0a750b8c75f14530a4897f5d4324b4e")
+(package! ns-auto-titlebar :pin "60273e764bf8d95abc40dd2fdc23af87ea9ee33b")
 
 (package! aas :recipe (:host github :repo "ymarco/auto-activating-snippets")
   :pin "3076cefea0f6ae9d7757f13c27b5602e007b58ec")

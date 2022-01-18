@@ -34,3 +34,13 @@ linkDotfile nvim
 linkDotfile ranger
 linkDotfile tmux
 linkDotfile doom
+linkDotfile bspwm 
+linkDotfile dunst
+linkDotfile lf 
+linkDotfile mpv
+linkDotfile newsboat
+linkDotfile picom
+linkDotfile polybar
+linkDotfile sxhkd
+linkDotfile zathura
+linkDotfile betterlockscreenrc

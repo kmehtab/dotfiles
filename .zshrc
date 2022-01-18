@@ -18,7 +18,6 @@ fi
 # Path to your oh-my-zsh installation.
 export PATH=/usr/local/bin:/usr/local/sbin:${PATH}
 export ZSH="$HOME/.oh-my-zsh"
-export GEM_HOME="$HOME/.config/.gem"
 export PATH=$PATH:$(ruby -e 'puts Gem.bindir')
 export PATH="$PATH:$GEM_HOME/bin"
 export VISUAL=vim;
@@ -121,11 +120,11 @@ alias phone="cd /Volumes/Phone\ HD"
 alias projects="cd /Volumes/Study\ HD/Development/projects"
 alias repo="cd /Volumes/Study\ HD/Development/repo"
 alias development="cd /Volumes/Study\ HD/Development"
-alias ls='colorls --sf'
-alias la='colorls -A --sf'
-alias lc='colorls -lA --sf'
-alias lt='colorls --t=2 --sf'
-alias c='clear'
+alias ls='exa -a --group-directories-first --icons'
+alias la='exa -a -h --group-directories-first --no-user --long --icons --git'
+alias lc='exa -a -a --long --icons'
+alias lt='exa -T --long --icons'
+# alias c='clear'
 
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
@@ -153,3 +152,5 @@ export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || pr
 
 # Remvoe folder highlighting
 export LS_COLORS=$LS_COLORS:'ow=1;34:';
+#colorscript random
+pfetch

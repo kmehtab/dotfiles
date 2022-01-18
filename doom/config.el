@@ -1,8 +1,8 @@
 ;;; config.el -*- lexical-binding: t; -*-
 
 ;; [[file:config.org::*Personal Information][Personal Information:1]]
-(setq user-full-name "TEC"
-      user-mail-address "tec@tecosaur.com")
+(setq user-full-name "kmehtab"
+      user-mail-address "kmehtab20@gmail.com")
 ;; Personal Information:1 ends here
 
 ;; [[file:config.org::*Personal Information][Personal Information:2]]
@@ -25,9 +25,6 @@
       scroll-margin 2)                            ; It's nice to maintain a little margin
 
 (display-time-mode 1)                             ; Enable time in the mode-line
-
-(unless (string-match-p "^Power N/A" (battery))   ; On laptops...
-  (display-battery-mode 1))                       ; it's nice to know how much power you have
 
 (global-subword-mode 1)                           ; Iterate through CamelCase words
 ;; Simple settings:1 ends here
@@ -78,7 +75,7 @@
 ;; Buffer defaults:1 ends here
 
 ;; [[file:config.org::*Font Face][Font Face:1]]
-(setq doom-font (font-spec :family "JetBrains Mono" :size 15)
+(setq doom-font (font-spec :family "FiraCode Nerd Font" :size 15)
       doom-big-font (font-spec :family "JetBrains Mono" :size 20)
       doom-variable-pitch-font (font-spec :family "Overpass" :size 15)
       doom-unicode-font (font-spec :family "JuliaMono")
@@ -113,18 +110,18 @@
 (add-hook 'after-change-major-mode-hook #'doom-modeline-conditional-buffer-encoding)
 ;; Theme and modeline:3 ends here
 
-;; [[file:config.org::*Theme and modeline][Theme and modeline:4]]
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
-;; Theme and modeline:4 ends here
-
 ;; [[file:config.org::*Miscellaneous][Miscellaneous:1]]
 (setq display-line-numbers-type 'relative)
 ;; Miscellaneous:1 ends here
 
 ;; [[file:config.org::*Miscellaneous][Miscellaneous:2]]
+(add-to-list 'initial-frame-alist '(fullscreen . maximized))
+;; Miscellaneous:2 ends here
+
+;; [[file:config.org::*Miscellaneous][Miscellaneous:3]]
 (setq doom-fallback-buffer-name "► Doom"
       +doom-dashboard-name "► Doom")
-;; Miscellaneous:2 ends here
+;; Miscellaneous:3 ends here
 
 ;; [[file:config.org::*Asyncronous config tangling][Asyncronous config tangling:1]]
 (defadvice! +literate-tangle-async-h ()
@@ -253,98 +250,12 @@
 ;; Splash screen:1 ends here
 
 ;; [[file:config.org::*Splash screen][Splash screen:2]]
-(defvar phrase-api-url
-  (nth (random 3)
-       '(("https://corporatebs-generator.sameerkumar.website/" :phrase)
-         ("https://useless-facts.sameerkumar.website/api" :data)
-         ("https://dev-excuses-api.herokuapp.com/" :text))))
-
-(defmacro phrase-generate-callback (token &optional format-fn ignore-read-only callback buffer-name)
-  `(lambda (status)
-     (unless (plist-get status :error)
-       (goto-char url-http-end-of-headers)
-       (let ((phrase (plist-get (json-parse-buffer :object-type 'plist) (cadr phrase-api-url)))
-             (inhibit-read-only ,(when (eval ignore-read-only) t)))
-         (setq phrase-last (cons phrase (float-time)))
-         (with-current-buffer ,(or (eval buffer-name) (buffer-name (current-buffer)))
-           (save-excursion
-             (goto-char (point-min))
-             (when (search-forward ,token nil t)
-               (with-silent-modifications
-                 (replace-match "")
-                 (insert ,(if format-fn format-fn 'phrase)))))
-           ,callback)))))
-
-(defvar phrase-last nil)
-(defvar phrase-timeout 5)
-
-(defmacro phrase-insert-async (&optional format-fn token ignore-read-only callback buffer-name)
-  `(let ((inhibit-message t))
-     (if (and phrase-last
-              (> phrase-timeout (- (float-time) (cdr phrase-last))))
-         (let ((phrase (car phrase-last)))
-           ,(if format-fn format-fn 'phrase))
-       (url-retrieve (car phrase-api-url)
-                     (phrase-generate-callback ,(or token "\ufeff") ,format-fn ,ignore-read-only ,callback ,buffer-name))
-       ;; For reference, \ufeff = Zero-width no-break space / BOM
-       ,(or token "\ufeff"))))
-
-(defun doom-dashboard-phrase ()
-  (phrase-insert-async
-   (progn
-     (setq-local phrase-position (point))
-     (mapconcat
-      (lambda (line)
-        (+doom-dashboard--center
-         +doom-dashboard--width
-         (with-temp-buffer
-           (insert-text-button
-            line
-            'action
-            (lambda (_)
-              (setq phrase-last nil)
-              (+doom-dashboard-reload t))
-            'face 'doom-dashboard-menu-title
-            'mouse-face 'doom-dashboard-menu-title
-            'help-echo "Random phrase"
-            'follow-link t)
-           (buffer-string))))
-      (split-string
-       (with-temp-buffer
-         (insert phrase)
-         (setq fill-column (min 70 (/ (* 2 (window-width)) 3)))
-         (fill-region (point-min) (point-max))
-         (buffer-string))
-       "\n")
-      "\n"))
-   nil t
-   (progn
-     (goto-char phrase-position)
-     (forward-whitespace 1))
-   +doom-dashboard-name))
-
-(defadvice! doom-dashboard-widget-loaded-with-phrase ()
-  :override #'doom-dashboard-widget-loaded
-  (setq line-spacing 0.2)
-  (insert
-   "\n\n"
-   (propertize
-    (+doom-dashboard--center
-     +doom-dashboard--width
-     (doom-display-benchmark-h 'return))
-    'face 'doom-dashboard-loaded)
-   "\n"
-   (doom-dashboard-phrase)
-   "\n"))
-;; Splash screen:2 ends here
-
-;; [[file:config.org::*Splash screen][Splash screen:3]]
 (remove-hook '+doom-dashboard-functions #'doom-dashboard-widget-shortmenu)
 (add-hook! '+doom-dashboard-mode-hook (hide-mode-line-mode 1) (hl-line-mode -1))
 (setq-hook! '+doom-dashboard-mode-hook evil-normal-state-cursor (list nil))
-;; Splash screen:3 ends here
+;; Splash screen:2 ends here
 
-;; [[file:config.org::*Splash screen][Splash screen:4]]
+;; [[file:config.org::*Splash screen][Splash screen:3]]
 (defun doom-dashboard-draw-ascii-emacs-banner-fn ()
   (let* ((banner
           '(",---.,-.-.,---.,---.,---."
@@ -364,7 +275,7 @@
 
 (unless (display-graphic-p) ; for some reason this messes up the graphical splash screen atm
   (setq +doom-dashboard-ascii-banner-fn #'doom-dashboard-draw-ascii-emacs-banner-fn))
-;; Splash screen:4 ends here
+;; Splash screen:3 ends here
 
 ;; [[file:config.org::daemon initialisation][daemon initialisation]]
 (defun greedily-do-daemon-setup ()
@@ -615,16 +526,24 @@
 ;; Embedded calc:2 ends here
 
 ;; [[file:config.org::*Centaur Tabs][Centaur Tabs:1]]
-(after! centaur-tabs
-  (centaur-tabs-mode -1)
-  (setq centaur-tabs-height 36
-        centaur-tabs-set-icons t
-        centaur-tabs-modified-marker "o"
-        centaur-tabs-close-button "×"
-        centaur-tabs-set-bar 'above
-        centaur-tabs-gray-out-icons 'buffer)
-  (centaur-tabs-change-fonts "P22 Underground Book" 160))
-;; (setq x-underline-at-descent-line t)
+(use-package! centaur-tabs
+  :hook (doom-first-file . centaur-tabs-mode)
+  :init
+  (setq centaur-tabs-set-icons t
+        centaur-tabs-gray-out-icons 'buffer
+        centaur-tabs-set-bar 'left
+        centaur-tabs-style "wave"
+        centaur-tabs-set-modified-marker t
+        centaur-tabs-close-button "✕"
+        centaur-tabs-modified-marker "•"
+        ;; Scrolling (with the mouse wheel) past the end of the tab list
+        ;; replaces the tab list with that of another Doom workspace. This
+        ;; prevents that.
+        centaur-tabs-cycle-scope 'tabs)
+
+  :config
+  (add-hook '+doom-dashboard-mode-hook #'centaur-tabs-local-mode)
+  (add-hook '+popup-buffer-mode-hook #'centaur-tabs-local-mode))
 ;; Centaur Tabs:1 ends here
 
 ;; [[file:config.org::*Company][Company:1]]
@@ -654,35 +573,6 @@
 ;; [[file:config.org::*ESS][ESS:1]]
 (set-company-backend! 'ess-r-mode '(company-R-args company-R-objects company-dabbrev-code :separate))
 ;; ESS:1 ends here
-
-;; [[file:config.org::*Copy/Paste][Copy/Paste:1]]
-; wsl-copy
-(defun wsl-copy (start end)
-  (interactive "r")
-  (shell-command-on-region start end "clip.exe")
-  (deactivate-mark))
-
-; wsl-paste
-(defun wsl-paste ()
-  (interactive)
-  (let ((clipboard
-     (shell-command-to-string "powershell.exe -command 'Get-Clipboard' 2> /dev/null")))
-    (setq clipboard (replace-regexp-in-string "\r" "" clipboard)) ; Remove Windows ^M characters
-    (setq clipboard (substring clipboard 0 -1)) ; Remove newline added by Powershell
-    (insert clipboard)))
-;; Copy/Paste:1 ends here
-
-;; [[file:config.org::*Copy/Paste][Copy/Paste:2]]
-; Bind wsl-copy to C-c C-v
-(global-set-key
- (kbd "C-c C-c")
- 'wsl-copy)
-
-; Bind wsl-paste to C-c C-v
-(global-set-key
- (kbd "C-c C-v")
- 'wsl-paste)
-;; Copy/Paste:2 ends here
 
 ;; [[file:config.org::*Doom modeline][Doom modeline:1]]
 (after! doom-modeline
@@ -723,6 +613,16 @@
     '(bar window-number pdf-pages pdf-icon buffer-name)
     '(misc-info matches major-mode process vcs)))
 ;; Doom modeline:1 ends here
+
+;; [[file:config.org::*Doom modeline][Doom modeline:2]]
+(with-eval-after-load 'subr-x
+  (setq-default mode-line-buffer-identification
+                '(:eval (format-mode-line (propertized-buffer-identification (or (when-let* ((buffer-file-truename buffer-file-truename)
+                                                                                             (prj (cdr-safe (project-current)))
+                                                                                             (prj-parent (file-name-directory (directory-file-name (expand-file-name prj)))))
+                                                                                   (concat (file-relative-name (file-name-directory buffer-file-truename) prj-parent) (file-name-nondirectory buffer-file-truename)))
+                                                                                 "%b"))))))
+;; Doom modeline:2 ends here
 
 ;; [[file:config.org::*Elcord][Elcord:1]]
 (setq elcord-use-major-mode-as-main-icon t)
@@ -778,6 +678,66 @@
 ;; [[file:config.org::*Ivy][Ivy:2]]
 (setq ivy-sort-max-size 50000)
 ;; Ivy:2 ends here
+
+;; [[file:config.org::*MacOs][MacOs:1]]
+;; Use spotlight search backend as a default for M-x locate (and helm/ivy
+;; variants thereof), since it requires no additional setup.
+(setq locate-command "mdfind")
+
+
+;;
+;;; Compatibilty fixes
+
+;; Curse Lion and its sudden but inevitable fullscreen mode!
+;; NOTE Meaningless to railwaycat's emacs-mac build
+(setq ns-use-native-fullscreen nil)
+
+;; Visit files opened outside of Emacs in existing frame, not a new one
+(setq ns-pop-up-frames nil)
+
+;; sane trackpad/mouse scroll settings
+(setq mac-redisplay-dont-reset-vscroll t
+      mac-mouse-wheel-smooth-scroll nil)
+;; MacOs:1 ends here
+
+;; [[file:config.org::*MacOs][MacOs:2]]
+;; borders will match the enabled theme.
+(and (or (daemonp)
+         (display-graphic-p))
+     (require 'ns-auto-titlebar nil t)
+     (ns-auto-titlebar-mode +1))
+
+;; HACK On MacOS, disabling the menu bar makes MacOS treat Emacs as a
+;;      non-application window -- which means it doesn't automatically capture
+;;      focus when it is started, among other things, so enable the menu-bar for
+;;      GUI frames, but keep it disabled in terminal frames because there it
+;;      activates an ugly, in-frame menu bar.
+(add-hook! '(window-setup-hook after-make-frame-functions)
+  (defun doom-init-menu-bar-in-gui-frames-h (&optional frame)
+    "Re-enable menu-bar-lines in GUI frames."
+    (when-let (frame (or frame (selected-frame)))
+      (when (display-graphic-p frame)
+        (set-frame-parameter frame 'menu-bar-lines 1)))))
+;; MacOs:2 ends here
+
+;; [[file:config.org::*MacOs][MacOs:3]]
+(after! auth-source
+  (pushnew! auth-sources 'macos-keychain-internet 'macos-keychain-generic))
+;; MacOs:3 ends here
+
+;; [[file:config.org::*MacOs][MacOs:4]]
+(use-package! osx-trash
+  :commands osx-trash-move-file-to-trash
+  :init
+  ;; Delete files to trash on macOS, as an extra layer of precaution against
+  ;; accidentally deleting wanted files.
+  (setq delete-by-moving-to-trash t)
+
+  ;; Lazy load `osx-trash'
+  (and IS-MAC
+       (not (fboundp 'system-move-file-to-trash))
+       (defalias #'system-move-file-to-trash #'osx-trash-move-file-to-trash)))
+;; MacOs:4 ends here
 
 ;; [[file:config.org::*Magit][Magit:1]]
 ;; (after! magit
@@ -979,7 +939,7 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
                       visual-fill-column-width 60
                       org-adapt-indentation nil)
                 (when (featurep 'org-superstar)
-                  (setq-local org-superstar-headline-bullets-list '("🙘" "🙙" "🙚" "🙛")
+                  (setq-local org-superstar-headline-bullets-list '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
                               ;; org-superstar-headline-bullets-list '("🙐" "🙑" "🙒" "🙓" "🙔" "🙕" "🙖" "🙗")
                               org-superstar-remove-leading-stars t)
                   (org-superstar-restart))
@@ -1289,7 +1249,7 @@ SQL can be either the emacsql vector representation, or a string."
 (use-package! calibredb
   :commands calibredb
   :config
-  (setq calibredb-root-dir "~/Desktop/TEC/Other/Ebooks"
+  (setq calibredb-root-dir "~/Documents/Epub-books"
         calibredb-db-dir (expand-file-name "metadata.db" calibredb-root-dir))
   (map! :map calibredb-show-mode-map
         :ne "?" #'calibredb-entry-dispatch
@@ -5996,7 +5956,7 @@ preview-default-preamble "\\fi}\"%' \"\\detokenize{\" %t \"}\""))
   (pushnew! projectile-globally-ignored-directories "node_modules" "flow-typed"))
 ;; JavaScript:1 ends here
 
-;; [[file:config.org::*Major Mode][Major Mode:1]]
+;; [[file:config.org::*JavaScript][JavaScript:2]]
 (dolist (feature '(rjsx-mode
                    typescript-mode
                    web-mode
@@ -6009,7 +5969,21 @@ preview-default-preamble "\\fi}\"%' \"\\detokenize{\" %t \"}\""))
         "ExtJS" "JQuery" "JQuery_Mobile" "JQuery_UI" "KnockoutJS" "Lo-Dash"
         "MarionetteJS" "MomentJS" "NodeJS" "PrototypeJS" "React" "RequireJS"
         "SailsJS" "UnderscoreJS" "VueJS" "ZeptoJS")
-      (set-ligatures! mode))))
+      (set-ligatures! mode
+        ;; Functional
+        :def "function"
+        :lambda "() =>"
+        :composition "compose"
+        ;; Types
+        :null "null"
+        :true "true" :false "false"
+        ;; Flow
+        :not "!"
+        :and "&&" :or "||"
+        :for "for"
+        :return "return"
+        ;; Other
+        :yield "import"))))
 
 
 (use-package! rjsx-mode
@@ -6118,9 +6092,9 @@ preview-default-preamble "\\fi}\"%' \"\\detokenize{\" %t \"}\""))
     (or (and (bound-and-true-p tide-mode)
              (plist-get (tide-tsfmt-options) :indentSize))
         typescript-indent-level)))
-;; Major Mode:1 ends here
+;; JavaScript:2 ends here
 
-;; [[file:config.org::*Tools][Tools:1]]
+;; [[file:config.org::*JavaScript][JavaScript:3]]
 (add-hook! '(typescript-mode-local-vars-hook
              typescript-tsx-mode-local-vars-hook
              web-mode-local-vars-hook
@@ -6217,8 +6191,9 @@ to tide."
     (add-hook 'js2-refactor-mode-hook #'evil-normalize-keymaps)
     (let ((js2-refactor-mode-map (evil-get-auxiliary-keymap js2-refactor-mode-map 'normal t t)))
       (js2r-add-keybindings-with-prefix (format "%s r" doom-localleader-key)))))
+;; JavaScript:3 ends here
 
-
+;; [[file:config.org::*JavaScript][JavaScript:4]]
 ;;;###package skewer-mode
 (map! :localleader
       (:after js2-mode
@@ -6254,9 +6229,11 @@ to tide."
         (:after js2-mode
           :map js2-mode-map
           :prefix ("n" . "npm"))))
-;; Tools:1 ends here
 
-;; [[file:config.org::*Projects][Projects:1]]
+
+;;
+;;; Projects
+
 (def-project-mode! +javascript-npm-mode
   :modes '(html-mode
            css-mode
@@ -6271,4 +6248,4 @@ to tide."
 
 (def-project-mode! +javascript-gulp-mode
   :when (locate-dominating-file default-directory "gulpfile.js"))
-;; Projects:1 ends here
+;; JavaScript:4 ends here
